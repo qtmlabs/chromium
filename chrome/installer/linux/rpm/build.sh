@@ -27,7 +27,9 @@ gen_spec() {
 # Setup the installation directory hierarchy in the package staging area.
 prep_staging_rpm() {
   prep_staging_common
-  install -m 755 -d "${STAGEDIR}/etc/cron.daily"
+  if [ "$BRANDING" = "google_chrome" ]; then
+    install -m 755 -d "${STAGEDIR}/etc/cron.daily"
+  fi
 }
 
 # Put the package contents in the staging area.
@@ -49,9 +51,11 @@ stage_install_rpm() {
   SHLIB_PERMS=755
   stage_install_common
   log_cmd echo "Staging RPM install files in '${STAGEDIR}'..."
-  process_template "${OUTPUTDIR}/installer/common/rpmrepo.cron" \
-    "${STAGEDIR}/etc/cron.daily/${PACKAGE}"
-  chmod 755 "${STAGEDIR}/etc/cron.daily/${PACKAGE}"
+  if [ "$BRANDING" = "google_chrome" ]; then
+    process_template "${OUTPUTDIR}/installer/common/rpmrepo.cron" \
+      "${STAGEDIR}/etc/cron.daily/${PACKAGE}"
+    chmod 755 "${STAGEDIR}/etc/cron.daily/${PACKAGE}"
+  fi
 }
 
 verify_package() {
