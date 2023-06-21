@@ -25,9 +25,6 @@ namespace gtk {
 
 GtkUiPlatformWayland::GtkUiPlatformWayland() {
   gdk_set_allowed_backends("wayland");
-  // GDK_BACKEND takes precedence over gdk_set_allowed_backends(), so override
-  // it to ensure we get the wayland backend.
-  base::Environment::Create()->SetVar("GDK_BACKEND", "wayland");
 }
 
 GtkUiPlatformWayland::~GtkUiPlatformWayland() = default;
