@@ -123,8 +123,7 @@ bool LoadGtkImpl() {
                           &gtk_version)) {
     gtk_version = 0;
   }
-  // Prefer GTK3 for now as the GTK4 ecosystem is still immature.
-  return gtk_version == 4 ? LoadGtk4() || LoadGtk3() : LoadGtk3() || LoadGtk4();
+  return gtk_version == 3 ? LoadGtk3() || LoadGtk4() : LoadGtk4() || LoadGtk3();
 }
 
 gfx::Insets InsetsFromGtkBorder(const GtkBorder& border) {
