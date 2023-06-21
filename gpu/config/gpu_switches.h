@@ -54,6 +54,7 @@ GPU_EXPORT extern const char kDisableSkiaGraphite[];
 GPU_EXPORT extern const char kEnableSkiaGraphite[];
 GPU_EXPORT extern const char kUseRedistributableDirectML[];
 GPU_EXPORT extern const char kEnableGpuMainTimeKeeperMetrics[];
+GPU_EXPORT extern const char kVulkanForceYCbCrLinearSampling[];
 
 }  // namespace switches
 
