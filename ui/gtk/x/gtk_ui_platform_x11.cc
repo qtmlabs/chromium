@@ -24,9 +24,6 @@ namespace gtk {
 
 GtkUiPlatformX11::GtkUiPlatformX11() : connection_(*x11::Connection::Get()) {
   gdk_set_allowed_backends("x11");
-  // GDK_BACKEND takes precedence over gdk_set_allowed_backends(), so override
-  // it to ensure we get the x11 backend.
-  base::Environment::Create()->SetVar("GDK_BACKEND", "x11");
   x11::InitXlib();
 }
 
