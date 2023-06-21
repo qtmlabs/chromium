@@ -146,4 +146,9 @@ const char kSkiaGraphiteBackendMetal[] = "metal";
 
 const char kShaderCachePath[] = "shader-cache-path";
 
+// Forces linear sampling for YCbCr conversion on Vulkan regardless of
+// whether the driver reports it as supported.
+const char kVulkanForceYCbCrLinearSampling[] =
+    "vulkan-force-ycbcr-linear-sampling";
+
 }  // namespace switches
