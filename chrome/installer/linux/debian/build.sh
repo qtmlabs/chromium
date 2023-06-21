@@ -38,8 +38,10 @@ gen_control() {
 # Setup the installation directory hierarchy in the package staging area.
 prep_staging_debian() {
   prep_staging_common
+  if [ "$BRANDING" = "google_chrome" ]; then
+    install -m 755 -d "${STAGEDIR}/etc/cron.daily"
+  fi
   install -m 755 -d "${STAGEDIR}/DEBIAN" \
-    "${STAGEDIR}/etc/cron.daily" \
     "${STAGEDIR}/usr/share/menu" \
     "${STAGEDIR}/usr/share/doc/${USR_BIN_SYMLINK_NAME}"
 }
@@ -66,13 +68,15 @@ stage_install_debian() {
   SHLIB_PERMS=644
   stage_install_common
   log_cmd echo "Staging Debian install files in '${STAGEDIR}'..."
-  install -m 755 -d "${STAGEDIR}/${INSTALLDIR}/cron"
-  process_template "${OUTPUTDIR}/installer/common/repo.cron" \
-      "${STAGEDIR}/${INSTALLDIR}/cron/${PACKAGE}"
-  chmod 755 "${STAGEDIR}/${INSTALLDIR}/cron/${PACKAGE}"
-  pushd "${STAGEDIR}/etc/cron.daily/" > /dev/null
-  ln -snf "${INSTALLDIR}/cron/${PACKAGE}" "${PACKAGE}"
-  popd > /dev/null
+  if [ "$BRANDING" = "google_chrome" ]; then
+    install -m 755 -d "${STAGEDIR}/${INSTALLDIR}/cron"
+    process_template "${OUTPUTDIR}/installer/common/repo.cron" \
+        "${STAGEDIR}/${INSTALLDIR}/cron/${PACKAGE}"
+    chmod 755 "${STAGEDIR}/${INSTALLDIR}/cron/${PACKAGE}"
+    pushd "${STAGEDIR}/etc/cron.daily/" > /dev/null
+    ln -snf "${INSTALLDIR}/cron/${PACKAGE}" "${PACKAGE}"
+    popd > /dev/null
+  fi
   process_template "${OUTPUTDIR}/installer/debian/debian.menu" \
     "${STAGEDIR}/usr/share/menu/${PACKAGE}.menu"
   chmod 644 "${STAGEDIR}/usr/share/menu/${PACKAGE}.menu"
