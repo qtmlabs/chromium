@@ -8036,6 +8036,14 @@ const char kEnableStandardBoundSessionCredentialsDescription[] =
     "more information see https://github.com/WICG/dbsc.";
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
 
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+const char kVulkanForceYCbCrLinearSamplingName[] =
+    "Vulkan: Force linear sampling for YUV";
+const char kVulkanForceYCbCrLinearSamplingDescription[] =
+    "Force usage of YUV linear sampling on Vulkan even if it's not reported"
+    " as supported by the graphics driver";
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order just like the header file.

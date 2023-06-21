@@ -157,4 +157,9 @@ const char kShaderCachePath[] = "shader-cache-path";
 // https://learn.microsoft.com/en-us/windows/ai/directml/dml-version-history
 const char kUseRedistributableDirectML[] = "use-redist-dml";
 
+// Forces linear sampling for YCbCr conversion on Vulkan regardless of
+// whether the driver reports it as supported.
+const char kVulkanForceYCbCrLinearSampling[] =
+    "vulkan-force-ycbcr-linear-sampling";
+
 }  // namespace switches
