@@ -282,6 +282,7 @@ static const char* const kSwitchNames[] = {
     switches::kUseGpuInTests,
     switches::kV,
     switches::kVModule,
+    switches::kVulkanForceYCbCrLinearSampling,
     switches::kWatchDirForScrollJankReport,
     switches::kWebViewDrawFunctorUsesVulkan,
 #if BUILDFLAG(IS_MAC)
