@@ -463,6 +463,12 @@ CreateVulkanYcbcrConversionInfo(
                           : format_props.optimalTilingFeatures;
   }
 
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kVulkanForceYCbCrLinearSampling)) {
+    format_features |=
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
+  }
+
   // As per the spec here [1], if the format does not support
   // VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT,
   // chromaFilter must be VK_FILTER_NEAREST.
