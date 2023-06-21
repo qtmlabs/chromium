@@ -11318,8 +11318,16 @@ const FeatureEntry kFeatureEntries[] = {
          kTrustedVaultFrequentDegradedRecoverabilityPollingDescription,
      kOsDesktop,
      FEATURE_VALUE_TYPE(
-         trusted_vault::kTrustedVaultFrequentDegradedRecoverabilityPolling)}
+         trusted_vault::kTrustedVaultFrequentDegradedRecoverabilityPolling)},
 #endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+    {"vulkan-force-ycbcr-linear-sampling",
+     flag_descriptions::kVulkanForceYCbCrLinearSamplingName,
+     flag_descriptions::kVulkanForceYCbCrLinearSamplingDescription,
+     kOsLinux | kOsCrOS | kOsLacros,
+     SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)}
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
     // NOTE: Adding a new flag requires adding a corresponding entry to enum
     // "LoginCustomFlags" in tools/metrics/histograms/enums.xml. See "Flag
     // Histograms" in tools/metrics/histograms/README.md (run the

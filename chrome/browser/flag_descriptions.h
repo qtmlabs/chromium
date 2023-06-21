@@ -4506,6 +4506,11 @@ extern const char kTheoraVideoCodecName[];
 extern const char kTheoraVideoCodecDescription[];
 #endif
 
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+extern const char kVulkanForceYCbCrLinearSamplingName[];
+extern const char kVulkanForceYCbCrLinearSamplingDescription[];
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order. See top instructions for more.
