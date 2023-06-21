@@ -288,6 +288,7 @@ static const char* const kSwitchNames[] = {
     switches::kUseAdapterLuid,
     switches::kUseFakeMjpegDecodeAccelerator,
     switches::kUseGpuInTests,
+    switches::kVulkanForceYCbCrLinearSampling,
     switches::kWatchDirForScrollJankReport,
     switches::kWebViewDrawFunctorUsesVulkan,
     switches::kSuppressPerformanceLogs,
