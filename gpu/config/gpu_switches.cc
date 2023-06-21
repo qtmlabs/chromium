@@ -144,4 +144,9 @@ const char kSkiaGraphiteBackendDawnSwiftshader[] = "dawn-swiftshader";
 const char kSkiaGraphiteBackendDawnVulkan[] = "dawn-vulkan";
 const char kSkiaGraphiteBackendMetal[] = "metal";
 
+// Forces linear sampling for YCbCr conversion on Vulkan regardless of
+// whether the driver reports it as supported.
+const char kVulkanForceYCbCrLinearSampling[] =
+    "vulkan-force-ycbcr-linear-sampling";
+
 }  // namespace switches
