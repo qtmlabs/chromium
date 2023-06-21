@@ -207,10 +207,6 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
       settings_api::PrefType::PREF_TYPE_STRING;
   (*s_allowlist)[::prefs::kPolicyThemeColor] =
       settings_api::PrefType::PREF_TYPE_NUMBER;
-#if BUILDFLAG(IS_LINUX)
-  (*s_allowlist)[::prefs::kSystemTheme] =
-      settings_api::PrefType::PREF_TYPE_NUMBER;
-#endif
   (*s_allowlist)[::prefs::kHomePage] = settings_api::PrefType::PREF_TYPE_URL;
   (*s_allowlist)[::prefs::kHomePageIsNewTabPage] =
       settings_api::PrefType::PREF_TYPE_BOOLEAN;
