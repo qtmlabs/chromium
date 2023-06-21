@@ -412,14 +412,6 @@ void AddAppearanceStrings(content::WebUIDataSource* html_source,
       {"uiFeatureAlignLeft", IDS_SETTINGS_UI_FEATURE_ALIGN_LEFT},
       {"uiFeatureAlignRight", IDS_SETTINGS_UI_FEATURE_ALIGN_RIGHT},
       {"resetToDefault", IDS_SETTINGS_RESET_TO_DEFAULT},
-#if BUILDFLAG(IS_LINUX)
-      {"gtkTheme", IDS_SETTINGS_GTK_THEME},
-      {"useGtkTheme", IDS_SETTINGS_USE_GTK_THEME},
-      {"qtTheme", IDS_SETTINGS_QT_THEME},
-      {"useQtTheme", IDS_SETTINGS_USE_QT_THEME},
-      {"classicTheme", IDS_SETTINGS_CLASSIC_THEME},
-      {"useClassicTheme", IDS_SETTINGS_USE_CLASSIC_THEME},
-#endif
 #if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS_LACROS)
       {"showWindowDecorations", IDS_SHOW_WINDOW_DECORATIONS},
 #endif
