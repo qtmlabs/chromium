@@ -22,11 +22,6 @@ class ThemeServiceAuraLinux : public ThemeService {
 
   // Overridden from ThemeService:
   ui::SystemTheme GetDefaultSystemTheme() const override;
-  void UseTheme(ui::SystemTheme system_theme) override;
-  void UseSystemTheme() override;
-  bool IsSystemThemeDistinctFromDefaultTheme() const override;
-  bool UsingSystemTheme() const override;
-  void FixInconsistentPreferencesIfNeeded() override;
 
   static ui::SystemTheme GetSystemThemeForProfile(const Profile* profile);
 };
