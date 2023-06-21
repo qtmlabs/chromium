@@ -157,4 +157,9 @@ const char kUseRedistributableDirectML[] = "use-redist-dml";
 const char kEnableGpuMainTimeKeeperMetrics[] =
     "enable-gpu-main-time-keeper-metrics";
 
+// Forces linear sampling for YCbCr conversion on Vulkan regardless of
+// whether the driver reports it as supported.
+const char kVulkanForceYCbCrLinearSampling[] =
+    "vulkan-force-ycbcr-linear-sampling";
+
 }  // namespace switches
