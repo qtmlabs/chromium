@@ -1,0 +1,3 @@
+ffmpeg_branding = "Chrome"
+proprietary_codecs = true
+enable_widevine = true
