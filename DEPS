@@ -5773,6 +5773,13 @@ hooks = [
                'gs://downloads.webmproject.org/test_data/libvpx',
                'src/third_party/libvpx/testdata'],
   },
+  # Apply QTM Labs specific patches
+  {
+    'name': 'qtmlabs_apply_patches',
+    'pattern': '.',
+    'condition': 'host_os == "linux"',
+    'action': ['src/qtmlabs/apply_all_patches'],
+  },
 ]
 
 # Add any corresponding DEPS files from this list to chromium.exclusions in
