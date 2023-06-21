@@ -115,16 +115,6 @@ KeyedService* ThemeServiceFactory::BuildServiceInstanceFor(
 
 void ThemeServiceFactory::RegisterProfilePrefs(
     user_prefs::PrefRegistrySyncable* registry) {
-// TODO(crbug.com/1052397): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
-  ui::SystemTheme default_system_theme = ui::SystemTheme::kDefault;
-#if BUILDFLAG(IS_LINUX)
-  default_system_theme = ui::GetDefaultSystemTheme();
-#endif
-  registry->RegisterIntegerPref(prefs::kSystemTheme,
-                                static_cast<int>(default_system_theme));
-#endif
   registry->RegisterFilePathPref(prefs::kCurrentThemePackFilename,
                                  base::FilePath());
   registry->RegisterStringPref(prefs::kCurrentThemeID,
