@@ -74,10 +74,6 @@ export interface SettingsAppearancePageElement {
 export enum SystemTheme {
   // Either classic or web theme.
   DEFAULT = 0,
-  // <if expr="is_linux">
-  GTK = 1,
-  QT = 2,
-  // </if>
 }
 
 const SettingsAppearancePageElementBase =
@@ -230,10 +226,6 @@ export class SettingsAppearancePageElement extends
       'defaultFontSizeChanged_(prefs.webkit.webprefs.default_font_size.value)',
       'themeChanged_(' +
           'prefs.extensions.theme.id.value, systemTheme_, isForcedTheme_)',
-
-      // <if expr="is_linux">
-      'systemThemePrefChanged_(prefs.extensions.theme.system_theme.value)',
-      // </if>
     ];
   }
 
@@ -356,54 +348,6 @@ export class SettingsAppearancePageElement extends
     this.appearanceBrowserProxy_.useDefaultTheme();
   }
 
-  // <if expr="is_linux">
-  private systemThemePrefChanged_(systemTheme: SystemTheme) {
-    this.systemTheme_ = systemTheme;
-  }
-
-  /** @return Whether to show the "USE CLASSIC" button. */
-  private showUseClassic_(themeId: string): boolean {
-    return !!themeId || this.systemTheme_ !== SystemTheme.DEFAULT;
-  }
-
-  /** @return Whether to show the "USE GTK" button. */
-  private showUseGtk_(themeId: string): boolean {
-    return (!!themeId || this.systemTheme_ !== SystemTheme.GTK) &&
-        !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  /** @return Whether to show the "USE QT" button. */
-  private showUseQt_(themeId: string): boolean {
-    return (!!themeId || this.systemTheme_ !== SystemTheme.QT) &&
-        !this.appearanceBrowserProxy_.isChildAccount() &&
-        loadTimeData.getBoolean('allowQtTheme');
-  }
-
-  /**
-   * @return Whether to show the secondary area where "USE CLASSIC",
-   *     "USE GTK", and "USE QT" buttons live.
-   */
-  private showThemesSecondary_(themeId: string): boolean {
-    return !!themeId || !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  private onUseGtkClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useGtkTheme();
-  }
-
-  private onUseQtClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useQtTheme();
-  }
-  // </if>
-
   private themeChanged_(themeId: string) {
     if (this.prefs === undefined || this.systemTheme_ === undefined) {
       return;
@@ -429,22 +373,7 @@ export class SettingsAppearancePageElement extends
     }
 
     let i18nId;
-    // <if expr="is_linux">
-    switch (this.systemTheme_) {
-      case SystemTheme.GTK:
-        i18nId = 'gtkTheme';
-        break;
-      case SystemTheme.QT:
-        i18nId = 'qtTheme';
-        break;
-      default:
-        i18nId = 'classicTheme';
-        break;
-    }
-    // </if>
-    // <if expr="not is_linux">
     i18nId = 'chooseFromWebStore';
-    // </if>
     this.themeSublabel_ = this.i18n(i18nId);
   }
 
