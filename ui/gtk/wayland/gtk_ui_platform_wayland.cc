@@ -25,7 +25,21 @@ GtkUiPlatformWayland::GtkUiPlatformWayland() {
 GtkUiPlatformWayland::~GtkUiPlatformWayland() = default;
 
 void GtkUiPlatformWayland::OnInitialized(GtkWidget* widget) {
-  // Nothing to do upon initialization for Wayland.
+  if (!GtkCheckVersion(4)) {
+    return;
+  }
+  GtkSettings* gtk_settings = gtk_settings_get_default();
+  CHECK(gtk_settings);
+  gchar* im_module = nullptr;
+  g_object_get(gtk_settings, "gtk-im-module", &im_module, nullptr);
+  if (im_module == nullptr || strlen(im_module) == 0) {
+    // The gtk-im-module setting has not been configured, set it to "ibus" since
+    // the default does not work on Ozone/Wayland.
+    g_object_set(gtk_settings, "gtk-im-module", "ibus", nullptr);
+  }
+  if (im_module) {
+    g_free(im_module);
+  }
 }
 
 GdkKeymap* GtkUiPlatformWayland::GetGdkKeymap() {
