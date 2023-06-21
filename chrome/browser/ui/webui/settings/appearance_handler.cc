@@ -28,16 +28,6 @@ void AppearanceHandler::RegisterMessages() {
       "useDefaultTheme",
       base::BindRepeating(&AppearanceHandler::HandleUseTheme,
                           base::Unretained(this), ui::SystemTheme::kDefault));
-#if BUILDFLAG(IS_LINUX)
-  web_ui()->RegisterMessageCallback(
-      "useGtkTheme",
-      base::BindRepeating(&AppearanceHandler::HandleUseTheme,
-                          base::Unretained(this), ui::SystemTheme::kGtk));
-  web_ui()->RegisterMessageCallback(
-      "useQtTheme",
-      base::BindRepeating(&AppearanceHandler::HandleUseTheme,
-                          base::Unretained(this), ui::SystemTheme::kQt));
-#endif
 }
 
 void AppearanceHandler::HandleUseTheme(ui::SystemTheme system_theme,
