@@ -274,7 +274,12 @@ BASE_FEATURE(kDefaultANGLEMetal,
 // Default to using ANGLE's Vulkan backend.
 BASE_FEATURE(kDefaultANGLEVulkan,
              "DefaultANGLEVulkan",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+#if BUILDFLAG(IS_LINUX)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 // Track current program's shaders at glUseProgram() call for crash report
 // purpose. Only effective on Windows because the attached shaders may only
@@ -286,7 +291,12 @@ BASE_FEATURE(kTrackCurrentShaders,
 // Enable sharing Vulkan device queue with ANGLE's Vulkan backend.
 BASE_FEATURE(kVulkanFromANGLE,
              "VulkanFromANGLE",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+#if BUILDFLAG(IS_LINUX)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 bool IsDefaultANGLEVulkan() {
 #if defined(MEMORY_SANITIZER)

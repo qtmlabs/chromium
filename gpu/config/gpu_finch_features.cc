@@ -239,7 +239,7 @@ BASE_FEATURE(kVaapiWebPImageDecodeAcceleration,
 // Note Android WebView uses kWebViewDrawFunctorUsesVulkan instead of this.
 BASE_FEATURE(kVulkan,
              "Vulkan",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
