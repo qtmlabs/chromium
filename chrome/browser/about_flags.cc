@@ -4929,7 +4929,12 @@ const FeatureEntry kFeatureEntries[] = {
     {"enable-vulkan", flag_descriptions::kEnableVulkanName,
      flag_descriptions::kEnableVulkanDescription,
      kOsWin | kOsLinux | kOsAndroid | kOsCrOS,
-     FEATURE_VALUE_TYPE(features::kVulkan)},
+#if BUILDFLAG(IS_LINUX)
+     FEATURE_VALUE_TYPE(features::kDefaultANGLEVulkan)
+#else
+     FEATURE_VALUE_TYPE(features::kVulkan)
+#endif
+    },
 #if BUILDFLAG(IS_ANDROID)
     {"translate-message-ui", flag_descriptions::kTranslateMessageUIName,
      flag_descriptions::kTranslateMessageUIDescription, kOsAndroid,
