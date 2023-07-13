@@ -4562,14 +4562,19 @@ const FeatureEntry kFeatureEntries[] = {
     {"enable-vulkan", flag_descriptions::kEnableVulkanName,
      flag_descriptions::kEnableVulkanDescription,
      kOsWin | kOsLinux | kOsAndroid | kOsCrOS | kOsLacros,
-     FEATURE_VALUE_TYPE(features::kVulkan)},
+#if BUILDFLAG(IS_LINUX)
+     FEATURE_VALUE_TYPE(features::kDefaultANGLEVulkan)
+#else
+     FEATURE_VALUE_TYPE(features::kVulkan)
+#endif
+    },
     {"default-angle-vulkan", flag_descriptions::kDefaultAngleVulkanName,
      flag_descriptions::kDefaultAngleVulkanDescription,
-     kOsLinux | kOsAndroid | kOsCrOS | kOsLacros,
+     kOsAndroid | kOsCrOS | kOsLacros,
      FEATURE_VALUE_TYPE(features::kDefaultANGLEVulkan)},
     {"vulkan-from-angle", flag_descriptions::kVulkanFromAngleName,
      flag_descriptions::kVulkanFromAngleDescription,
-     kOsLinux | kOsAndroid | kOsCrOS | kOsLacros,
+     kOsAndroid | kOsCrOS | kOsLacros,
      FEATURE_VALUE_TYPE(features::kVulkanFromANGLE)},
 #if BUILDFLAG(IS_ANDROID)
     {"translate-message-ui", flag_descriptions::kTranslateMessageUIName,
