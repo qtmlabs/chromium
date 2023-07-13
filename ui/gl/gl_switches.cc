@@ -266,7 +266,7 @@ BASE_FEATURE(kDefaultANGLEMetal,
 // Default to using ANGLE's Vulkan backend.
 BASE_FEATURE(kDefaultANGLEVulkan,
              "DefaultANGLEVulkan",
-#if BUILDFLAG(IS_DESKTOP_ANDROID)
+#if BUILDFLAG(IS_DESKTOP_ANDROID) || BUILDFLAG(IS_LINUX)
              base::FEATURE_ENABLED_BY_DEFAULT);
 #else
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -282,7 +282,7 @@ BASE_FEATURE(kTrackCurrentShaders,
 // Enable sharing Vulkan device queue with ANGLE's Vulkan backend.
 BASE_FEATURE(kVulkanFromANGLE,
              "VulkanFromANGLE",
-#if BUILDFLAG(IS_DESKTOP_ANDROID)
+#if BUILDFLAG(IS_DESKTOP_ANDROID) || BUILDFLAG(IS_LINUX)
              base::FEATURE_ENABLED_BY_DEFAULT);
 #else
              base::FEATURE_DISABLED_BY_DEFAULT);
