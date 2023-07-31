@@ -491,6 +491,7 @@ void WaylandBufferManagerGpu::OpenAndStoreDrmRenderNodeFd(
   }
 
   drm_render_node_fd_ = handle.PassFD();
+  drm_render_node_path_ = drm_node_path;
 }
 #endif
 
