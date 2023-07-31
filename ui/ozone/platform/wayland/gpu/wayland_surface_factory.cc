@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/wayland/gpu/wayland_surface_factory.h"
 
+#include <xf86drm.h>
 #include <memory>
 
 #include "base/memory/ptr_util.h"
@@ -41,6 +42,35 @@
 namespace ui {
 
 namespace {
+
+EGLDeviceEXT GetEGLDeviceForRenderNodePath(
+    const base::FilePath& wanted_render_node_path) {
+  if (!(gl::g_driver_egl.client_ext.b_EGL_EXT_device_query &&
+        gl::g_driver_egl.client_ext.b_EGL_EXT_platform_device &&
+        gl::g_driver_egl.client_ext.b_EGL_EXT_device_enumeration)) {
+    return EGL_NO_DEVICE_EXT;
+  }
+
+  std::vector<EGLDeviceEXT> devices(DRM_MAX_MINOR, EGL_NO_DEVICE_EXT);
+  EGLint num_devices = 0;
+
+  eglQueryDevicesEXT(DRM_MAX_MINOR, devices.data(), &num_devices);
+  devices.resize(num_devices);
+
+  for (EGLDeviceEXT device : devices) {
+    const char* device_render_node_path =
+        eglQueryDeviceStringEXT(device, EGL_DRM_RENDER_NODE_FILE_EXT);
+    if (!device_render_node_path) {
+      // Not a DRM device.
+      continue;
+    }
+    if (wanted_render_node_path.value() == device_render_node_path) {
+      return device;
+    }
+  }
+
+  return EGL_NO_DEVICE_EXT;
+}
 
 class GLOzoneEGLWayland : public GLOzoneEGL {
  public:
@@ -174,6 +204,16 @@ scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateOffscreenGLSurface(
 gl::EGLDisplayPlatform GLOzoneEGLWayland::GetNativeDisplay() {
   if (connection_) {
     return connection_->GetNativeDisplay();
+  }
+  EGLDeviceEXT egl_device = EGL_NO_DEVICE_EXT;
+  const auto& render_node_path = buffer_manager_->drm_render_node_path();
+  if (!render_node_path.empty()) {
+    egl_device = GetEGLDeviceForRenderNodePath(render_node_path);
+  }
+  if (egl_device != EGL_NO_DEVICE_EXT) {
+    return gl::EGLDisplayPlatform(
+        reinterpret_cast<EGLNativeDisplayType>(egl_device),
+        EGL_PLATFORM_DEVICE_EXT);
   }
   if (gl::g_driver_egl.client_ext.b_EGL_MESA_platform_surfaceless) {
     return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY,
