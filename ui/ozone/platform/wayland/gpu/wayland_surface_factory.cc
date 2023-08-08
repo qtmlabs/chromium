@@ -171,9 +171,10 @@ scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateOffscreenGLSurface(
 }
 
 gl::EGLDisplayPlatform GLOzoneEGLWayland::GetNativeDisplay() {
-  if (connection_) {
+  if (gl::g_driver_egl.client_ext.b_EGL_EXT_platform_wayland && connection_) {
     return gl::EGLDisplayPlatform(
-        reinterpret_cast<EGLNativeDisplayType>(connection_->display()));
+        reinterpret_cast<EGLNativeDisplayType>(connection_->display()),
+        EGL_PLATFORM_WAYLAND_EXT);
   }
   if (gl::g_driver_egl.client_ext.b_EGL_MESA_platform_surfaceless) {
     return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY,
@@ -184,9 +185,6 @@ gl::EGLDisplayPlatform GLOzoneEGLWayland::GetNativeDisplay() {
 
 bool GLOzoneEGLWayland::LoadGLES2Bindings(
     const gl::GLImplementationParts& impl) {
-  // TODO: It may not be necessary to set this environment variable when using
-  // swiftshader.
-  setenv("EGL_PLATFORM", "wayland", 0);
   return LoadDefaultEGLGLES2Bindings(impl);
 }
 
