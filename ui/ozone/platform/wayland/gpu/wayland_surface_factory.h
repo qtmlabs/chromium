@@ -47,6 +47,8 @@ class WaylandSurfaceFactory : public SurfaceFactoryOzone {
       gfx::BufferFormat format,
       gfx::BufferUsage usage,
       absl::optional<gfx::Size> framebuffer_size = absl::nullopt) override;
+  bool CanCreateNativePixmapForFormat(gfx::BufferFormat format,
+                                      bool is_import) override;
   void CreateNativePixmapAsync(gfx::AcceleratedWidget widget,
                                gpu::VulkanDeviceQueue* device_queue,
                                gfx::Size size,
