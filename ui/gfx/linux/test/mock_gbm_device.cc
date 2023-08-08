@@ -191,7 +191,7 @@ std::unique_ptr<GbmBuffer> MockGbmDevice::CreateBufferFromHandle(
   return nullptr;
 }
 
-bool MockGbmDevice::CanCreateBufferForFormat(uint32_t format) {
+bool MockGbmDevice::CanCreateBufferForFormat(uint32_t format, bool is_import) {
   return true;
 }
 
