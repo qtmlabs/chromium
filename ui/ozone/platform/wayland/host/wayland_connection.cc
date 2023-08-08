@@ -29,6 +29,7 @@
 #include "ui/events/devices/keyboard_device.h"
 #include "ui/events/devices/touchscreen_device.h"
 #include "ui/gfx/geometry/point.h"
+#include "ui/gl/gl_bindings.h"
 #include "ui/ozone/common/features.h"
 #include "ui/ozone/platform/wayland/common/wayland_util.h"
 #include "ui/ozone/platform/wayland/host/fractional_scale_manager.h"
@@ -768,6 +769,11 @@ struct wl_callback* WaylandConnection::GetSyncCallback() {
 }
 
 gl::EGLDisplayPlatform WaylandConnection::GetNativeDisplay() {
+  if (gl::g_driver_egl.client_ext.b_EGL_EXT_platform_wayland) {
+    return gl::EGLDisplayPlatform(
+        reinterpret_cast<EGLNativeDisplayType>(display()),
+        EGL_PLATFORM_WAYLAND_EXT);
+  }
   return gl::EGLDisplayPlatform(
       reinterpret_cast<EGLNativeDisplayType>(display()));
 }
