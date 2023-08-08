@@ -32,7 +32,7 @@ class COMPONENT_EXPORT(GBM_SUPPORT_X11) GpuMemoryBufferSupportX11 {
                                           const gfx::Size& size,
                                           gfx::BufferUsage usage);
 
-  bool CanCreateNativePixmapForFormat(gfx::BufferFormat format);
+  bool CanCreateNativePixmapForFormat(gfx::BufferFormat format, bool is_import);
   std::unique_ptr<GbmBuffer> CreateBufferFromHandle(
       const gfx::Size& size,
       gfx::BufferFormat format,
