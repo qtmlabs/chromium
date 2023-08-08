@@ -8,12 +8,15 @@
 #include <gbm.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "base/files/scoped_file.h"
 #include "base/strings/stringprintf.h"
 #include "ui/gfx/linux/scoped_gbm_device.h"  // nogncheck
+#include "ui/gl/gl_display_manager.h"
+#include "ui/gl/gpu_preference.h"
 
 namespace ui {
 
@@ -41,6 +44,25 @@ base::FilePath DrmRenderNodePathFinder::GetDrmRenderNodePath() const {
 }
 
 void DrmRenderNodePathFinder::FindDrmRenderNodePath() {
+  dev_t system_device_id = static_cast<dev_t>(
+      gl::GLDisplayManagerEGL::GetInstance()->GetSystemDeviceId(
+          gl::GpuPreference::kDefault));
+  if (system_device_id != 0) {
+    // If GPU info discovery selected a specific render node, try using that
+    // first.
+    std::string dri_render_node(
+        base::StringPrintf(kDriRenderNodeTemplate, minor(system_device_id)));
+    base::ScopedFD drm_fd(open(dri_render_node.c_str(), O_RDWR));
+    if (drm_fd.get() >= 0) {
+      // Check if GBM actually supports the device.
+      ScopedGbmDevice device(gbm_create_device(drm_fd.get()));
+      if (device) {
+        drm_render_node_path_ = base::FilePath(dri_render_node);
+        return;
+      }
+    }
+  }
+
   for (uint32_t i = kRenderNodeStart; i < kRenderNodeEnd; i++) {
     /* First,  look in sysfs and skip if this is the vgem render node. */
     std::string node_link(
