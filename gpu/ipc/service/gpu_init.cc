@@ -213,10 +213,11 @@ uint64_t CHROME_LUID_to_uint64_t(const CHROME_LUID& luid) {
 }
 #endif  // BUILDFLAG(IS_WIN)
 
-#if defined(USE_EGL) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC))
-// GPU picking is only effective with ANGLE/Metal backend on Mac and
-// on Windows with EGL.
-// Returns the default GPU's system_device_id.
+#if defined(USE_EGL) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+                         (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS)))
+// GPU picking is only effective with Mac with ANGLE/Metal, Windows with
+// ANGLE/D3D11 and Linux with ANGLE/Vulkan or ANGLE/GL. Returns the default
+// GPU's system_device_id.
 void SetupGLDisplayManagerEGL(const GPUInfo& gpu_info,
                               const GpuFeatureInfo& gpu_feature_info) {
   const GPUInfo::GPUDevice* gpu_high_perf =
@@ -232,7 +233,7 @@ void SetupGLDisplayManagerEGL(const GPUInfo& gpu_info,
       gpu_low_power ? CHROME_LUID_to_uint64_t(gpu_low_power->luid) : 0;
   uint64_t system_device_id_default =
       CHROME_LUID_to_uint64_t(gpu_default->luid);
-#else  // IS_MAC
+#else  // BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
   const GPUInfo::GPUDevice* gpu_default =
       gpu_low_power ? gpu_low_power : &(gpu_info.gpu);
   uint64_t system_device_id_high_perf =
@@ -329,9 +330,10 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   gpu_feature_info_ = ComputeGpuFeatureInfo(gpu_info_, gpu_preferences_,
                                             command_line, &needs_more_info);
 
-#if defined(USE_EGL) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC))
+#if defined(USE_EGL) && \
+    (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX))
   SetupGLDisplayManagerEGL(gpu_info_, gpu_feature_info_);
-#endif  // USE_EGL && (IS_WIN || IS_MAC)
+#endif  // USE_EGL && (IS_WIN || IS_MAC || IS_LINUX)
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CASTOS)
 
   gpu_info_.in_process_gpu = false;
