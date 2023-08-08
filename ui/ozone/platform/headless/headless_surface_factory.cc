@@ -26,6 +26,7 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gfx/native_pixmap.h"
 #include "ui/gfx/vsync_provider.h"
+#include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/ozone/common/egl_util.h"
 #include "ui/ozone/common/gl_ozone_egl.h"
@@ -206,6 +207,10 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
  protected:
   // GLOzoneEGL:
   gl::EGLDisplayPlatform GetNativeDisplay() override {
+    if (gl::g_driver_egl.client_ext.b_EGL_MESA_platform_surfaceless) {
+      return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY,
+                                    EGL_PLATFORM_SURFACELESS_MESA);
+    }
     return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY);
   }
 
