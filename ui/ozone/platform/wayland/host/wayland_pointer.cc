@@ -116,6 +116,13 @@ void WaylandPointer::OnEnter(void* data,
   self->delegate_->OnPointerFocusChanged(
       window, self->connection_->MaybeConvertLocation(location, window),
       EventDispatchPolicyForPlatform());
+
+  // Whenever the window gets the pointer focus back, the cursor shape must be
+  // updated. Otherwise, it is invalidated upon wl_pointer::leave and is not
+  // restored by the Wayland compositor.
+  if (window) {
+    window->ForceUpdateCursor();
+  }
 }
 
 // static
