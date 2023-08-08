@@ -300,6 +300,8 @@ void ClientExtensionsEGL::InitializeClientExtensionSettings() {
       gfx::HasExtension(extensions, "EGL_EXT_device_query");
   b_EGL_EXT_platform_device =
       gfx::HasExtension(extensions, "EGL_EXT_platform_device");
+  b_EGL_EXT_platform_wayland =
+      gfx::HasExtension(extensions, "EGL_EXT_platform_wayland");
   b_EGL_KHR_debug = gfx::HasExtension(extensions, "EGL_KHR_debug");
   b_EGL_MESA_platform_surfaceless =
       gfx::HasExtension(extensions, "EGL_MESA_platform_surfaceless");
