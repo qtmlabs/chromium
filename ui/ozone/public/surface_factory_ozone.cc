@@ -87,7 +87,8 @@ scoped_refptr<gfx::NativePixmap> SurfaceFactoryOzone::CreateNativePixmap(
 }
 
 bool SurfaceFactoryOzone::CanCreateNativePixmapForFormat(
-    gfx::BufferFormat format) {
+    gfx::BufferFormat format,
+    bool is_import) {
   // It's up to specific implementations of this method to report an inability
   // to create native pixmap handles for a specific format.
   return true;
