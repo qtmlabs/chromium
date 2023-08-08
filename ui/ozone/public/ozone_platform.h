@@ -143,6 +143,11 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // Indicates that the platform allows client applications to manipulate
     // global screen coordinates. Wayland, for example, disallow it by design.
     bool supports_global_screen_coordinates = true;
+
+#if BUILDFLAG(IS_LINUX)
+    // Indicates that the platform supports GPU process sandboxing.
+    bool supports_gpu_sandboxing = false;
+#endif
   };
 
   // Groups platform properties that can only be known at run time.

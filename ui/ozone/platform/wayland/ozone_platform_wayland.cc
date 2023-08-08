@@ -335,6 +335,12 @@ class OzonePlatformWayland : public OzonePlatform,
       // arbitrary position.
       properties->supports_global_screen_coordinates =
           kDefaultScreenCoordinateEnabled;
+
+#if BUILDFLAG(IS_LINUX)
+      // The GPU process on Ozone/Wayland does not need to connect to a display
+      // server to function, so enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
+#endif
       initialised = true;
     }
 

@@ -814,10 +814,13 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
 
   UMA_HISTOGRAM_ENUMERATION("GPU.GLImplementation", gl::GetGLImplementation());
 
+  // On Linux, the GPU sandbox is either started early or not at all.
+#if !BUILDFLAG(IS_LINUX)
   if (!gpu_info_.sandboxed && !attempted_startsandbox) {
     gpu_info_.sandboxed = sandbox_helper_->EnsureSandboxInitialized(
         watchdog_thread_.get(), &gpu_info_, gpu_preferences_);
   }
+#endif
   UMA_HISTOGRAM_BOOLEAN("GPU.Sandboxed", gpu_info_.sandboxed);
 
   init_successful_ = true;

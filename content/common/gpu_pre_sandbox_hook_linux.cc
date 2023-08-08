@@ -48,6 +48,9 @@ using sandbox::syscall_broker::BrokerProcess;
 namespace content {
 namespace {
 
+// The major number of DRM devices is always 226 on Linux.
+constexpr int kDrmMajor = 226;
+
 inline bool IsChromeOS() {
   // TODO(b/206464999): for now, we're making the LaCrOS and Ash GPU sandboxes
   // behave similarly. However, the LaCrOS GPU sandbox could probably be made
@@ -215,28 +218,21 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
 }
 
 void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
-                             const std::string& path) {
-  struct stat st;
-
-  if (stat(path.c_str(), &st) == 0) {
-    permissions->push_back(BrokerFilePermission::ReadWrite(path));
-
-    uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-    uint32_t minor = static_cast<uint32_t>(st.st_rdev) & 0xff;
-    std::string char_device_path =
-        base::StringPrintf("/sys/dev/char/%u:%u/", major, minor);
-    permissions->push_back(
-        BrokerFilePermission::ReadOnlyRecursive(char_device_path));
-  }
+                             const char* format,
+                             int minor) {
+  permissions->push_back(
+      BrokerFilePermission::ReadWrite(base::StringPrintf(format, minor)));
+  std::string char_device_path =
+      base::StringPrintf("/sys/dev/char/%d:%d/", kDrmMajor, minor);
+  permissions->push_back(
+      BrokerFilePermission::ReadOnlyRecursive(char_device_path));
 }
 
 void AddDrmGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   permissions->push_back(BrokerFilePermission::ReadOnly("/dev/dri"));
-  for (int i = 0; i <= 9; ++i) {
-    AddDrmGpuDevPermissions(permissions,
-                            base::StringPrintf("/dev/dri/card%d", i));
-    AddDrmGpuDevPermissions(permissions,
-                            base::StringPrintf("/dev/dri/renderD%d", i + 128));
+  for (int i = 0; i < 16; ++i) {
+    AddDrmGpuDevPermissions(permissions, "/dev/dri/card%d", i);
+    AddDrmGpuDevPermissions(permissions, "/dev/dri/renderD%d", i + 128);
   }
 }
 
@@ -281,7 +277,7 @@ void AddAmdGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   }
 }
 
-void AddNvidiaGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+void AddNouveauGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   static const char* const kReadOnlyList[] = {
       // To support threads in mesa we use --gpu-sandbox-start-early and
       // that requires the following libs and files to be accessible.
@@ -420,25 +416,16 @@ void AddChromecastArmGpuPermissions(
   }
 }
 
-void AddVulkanICDPermissions(std::vector<BrokerFilePermission>* permissions) {
-  static const char* const kReadOnlyICDPrefixes[] = {"/usr/share/vulkan/icd.d",
-                                                     "/etc/vulkan/icd.d"};
+void AddVulkanFilePermissions(std::vector<BrokerFilePermission>* permissions) {
+  static const char* const kReadOnlyDirsList[] = {"/usr/share/vulkan/",
+                                                  "/etc/vulkan/"};
 
-  static const char* const kReadOnlyICDList[] = {
-      "intel_icd.x86_64.json", "nvidia_icd.json", "radeon_icd.x86_64.json",
-      "mali_icd.json"};
-
-  for (std::string prefix : kReadOnlyICDPrefixes) {
-    permissions->push_back(BrokerFilePermission::ReadOnly(prefix));
-    for (const char* json : kReadOnlyICDList) {
-      permissions->push_back(
-          BrokerFilePermission::ReadOnly(prefix + "/" + json));
-    }
+  for (std::string prefix : kReadOnlyDirsList) {
+    permissions->push_back(BrokerFilePermission::ReadOnlyRecursive(prefix));
   }
 }
 
-void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
-  static const char kDriCardBasePath[] = "/dev/dri/card";
+void AddNvidiaGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   static const char kNvidiaCtlPath[] = "/dev/nvidiactl";
   static const char kNvidiaDeviceBasePath[] = "/dev/nvidia";
   static const char kNvidiaDeviceModeSetPath[] = "/dev/nvidia-modeset";
@@ -447,12 +434,6 @@ void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   // For shared memory.
   permissions->push_back(
       BrokerFilePermission::ReadWriteCreateTemporaryRecursive(kDevShm));
-
-  // For DRI cards.
-  for (int i = 0; i <= 9; ++i) {
-    permissions->push_back(BrokerFilePermission::ReadWrite(
-        base::StringPrintf("%s%d", kDriCardBasePath, i)));
-  }
 
   // For Nvidia GLX driver.
   permissions->push_back(BrokerFilePermission::ReadWrite(kNvidiaCtlPath));
@@ -463,15 +444,51 @@ void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   permissions->push_back(
       BrokerFilePermission::ReadWrite(kNvidiaDeviceModeSetPath));
   permissions->push_back(BrokerFilePermission::ReadOnly(kNvidiaParamsPath));
+}
 
-  // For SwiftShader
-  base::FilePath module_path;
-  if (base::PathService::Get(base::DIR_MODULE, &module_path)) {
-    std::string sw_path =
-        module_path.Append("libvk_swiftshader.so").MaybeAsASCII();
-    if (!sw_path.empty()) {
-      permissions->push_back(BrokerFilePermission::ReadOnly(sw_path));
+void AddLinuxGenericGpuPermissions(
+    std::vector<BrokerFilePermission>* permissions) {
+  static const char* const kReadOnlyList[] = {
+      // Device-related parts of sysfs
+      "/sys",
+      "/sys/bus",
+      "/sys/bus/",
+      "/sys/class",
+      "/sys/class/",
+      "/sys/dev",
+      "/sys/dev/",
+      "/sys/devices",
+      "/sys/devices/",
+
+      // Dynamic linker library path resolution cache
+      "/etc/ld.so.cache",
+
+      // All known system library search paths
+      "/lib/",
+      "/lib32/",
+      "/lib64/",
+      "/usr/lib/",
+      "/usr/lib32/",
+      "/usr/lib64/",
+
+      // libglvnd ICD metadata
+      "/etc/glvnd/",
+      "/usr/share/glvnd/",
+  };
+  for (const char* item : kReadOnlyList) {
+    if (item[strlen(item) - 1] == '/') {
+      permissions->push_back(BrokerFilePermission::ReadOnlyRecursive(item));
+    } else {
+      permissions->push_back(BrokerFilePermission::ReadOnly(item));
     }
+  }
+
+  // For bundled libraries that lives inside the Chromium directory that will be
+  // loaded at runtime (e.g. ANGLE, libvulkan).
+  base::FilePath module_dir;
+  if (base::PathService::Get(base::DIR_MODULE, &module_dir)) {
+    permissions->push_back(
+        BrokerFilePermission::ReadOnlyRecursive(module_dir.value() + '/'));
   }
 }
 
@@ -482,7 +499,7 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
   std::vector<BrokerFilePermission> permissions = {
       BrokerFilePermission::ReadOnly(kDriRcPath)};
 
-  AddVulkanICDPermissions(&permissions);
+  AddVulkanFilePermissions(&permissions);
 
   if (IsChromeOS()) {
     // Permissions are additive, there can be multiple GPUs in the system.
@@ -503,8 +520,7 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
       AddIntelGpuPermissions(&permissions);
     }
     if (options.use_nvidia_specific_policies) {
-      AddStandardGpuPermissions(&permissions);
-      AddNvidiaGpuPermissions(&permissions);
+      AddNouveauGpuPermissions(&permissions);
     }
     if (options.use_virtio_specific_policies) {
       AddVirtIOGpuPermissions(&permissions);
@@ -522,7 +538,10 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
     }
   }
 
-  AddStandardGpuPermissions(&permissions);
+  AddLinuxGenericGpuPermissions(&permissions);
+  AddDrmGpuPermissions(&permissions);
+  AddNvidiaGpuPermissions(&permissions);
+
   return permissions;
 }
 
@@ -655,13 +674,7 @@ sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
   command_set.set(sandbox::syscall_broker::COMMAND_ACCESS);
   command_set.set(sandbox::syscall_broker::COMMAND_OPEN);
   command_set.set(sandbox::syscall_broker::COMMAND_STAT);
-  if (IsChromeOS() &&
-      (options.use_amd_specific_policies ||
-       options.use_intel_specific_policies ||
-       options.use_nvidia_specific_policies ||
-       options.use_virtio_specific_policies || IsArchitectureArm())) {
-    command_set.set(sandbox::syscall_broker::COMMAND_READLINK);
-  }
+  command_set.set(sandbox::syscall_broker::COMMAND_READLINK);
   return command_set;
 }
 
@@ -681,8 +694,14 @@ bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
       CommandSetForGPU(options), FilePermissionsForGpu(options),
       base::BindOnce(BrokerProcessPreSandboxHook), options);
 
-  if (!LoadLibrariesForGpu(options))
-    return false;
+  if (IsChromeOS() || UseChromecastSandboxAllowlist()) {
+    if (!LoadLibrariesForGpu(options)) {
+      return false;
+    }
+  }
+
+  // We don't need to preload libraries on desktop Linux since every system
+  // library paths should be whitelisted.
 
   // TODO(tsepez): enable namspace sandbox here once crashes are understood.
 
