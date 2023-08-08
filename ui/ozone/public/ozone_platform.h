@@ -154,6 +154,11 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // Whether the platform supports system/shell integrated color picker
     // dialog. An example is XDG Desktop Portal provided PickColor dialog.
     bool supports_color_picker_dialog = true;
+
+#if BUILDFLAG(IS_LINUX)
+    // Indicates that the platform supports GPU process sandboxing.
+    bool supports_gpu_sandboxing = false;
+#endif
   };
 
   // Groups platform properties that can only be known at run time.
