@@ -233,10 +233,10 @@ scoped_refptr<gfx::NativePixmap> X11SurfaceFactory::CreateNativePixmap(
   return pixmap;
 }
 
-bool X11SurfaceFactory::CanCreateNativePixmapForFormat(
-    gfx::BufferFormat format) {
+bool X11SurfaceFactory::CanCreateNativePixmapForFormat(gfx::BufferFormat format,
+                                                       bool is_import) {
   return ui::GpuMemoryBufferSupportX11::GetInstance()
-      ->CanCreateNativePixmapForFormat(format);
+      ->CanCreateNativePixmapForFormat(format, is_import);
 }
 
 void X11SurfaceFactory::CreateNativePixmapAsync(
@@ -279,7 +279,7 @@ X11SurfaceFactory::GetSupportedFormatsForTexturing() const {
   for (int j = 0; j <= static_cast<int>(gfx::BufferFormat::LAST); ++j) {
     const gfx::BufferFormat buffer_format = static_cast<gfx::BufferFormat>(j);
     if (ui::GpuMemoryBufferSupportX11::GetInstance()
-            ->CanCreateNativePixmapForFormat(buffer_format)) {
+            ->CanCreateNativePixmapForFormat(buffer_format, true)) {
       supported_buffer_formats.push_back(buffer_format);
     }
   }

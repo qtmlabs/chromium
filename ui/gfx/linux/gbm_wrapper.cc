@@ -12,6 +12,7 @@
 #include <gbm.h>
 #include <sys/mman.h>
 
+#include <cstring>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -30,6 +31,7 @@
 
 #if !defined(MINIGBM)
 #include <dlfcn.h>
+#include <drm_fourcc.h>
 #include <fcntl.h>
 #include <xf86drm.h>
 
@@ -403,7 +405,7 @@ class Device final : public ui::GbmDevice {
     }
 
     int gbm_flags = 0;
-    if ((gbm_flags = GetSupportedGbmFlags(format)) == 0) {
+    if ((gbm_flags = GetSupportedGbmFlags(format, true)) == 0) {
       LOG(ERROR) << "gbm format not supported: " << DrmFormatToString(format);
       return nullptr;
     }
@@ -436,31 +438,42 @@ class Device final : public ui::GbmDevice {
                                     size, std::move(handle));
   }
 
-  bool CanCreateBufferForFormat(uint32_t format) override {
-    return GetSupportedGbmFlags(format) != 0;
+  bool CanCreateBufferForFormat(uint32_t format, bool is_import) override {
+    return GetSupportedGbmFlags(format, is_import) != 0;
   }
 
+  int GetSupportedGbmFlags(uint32_t format, bool is_import) {
 #if defined(MINIGBM)
-  int GetSupportedGbmFlags(uint32_t format) {
     int gbm_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
-    if (gbm_device_is_format_supported(device_.get(), format, gbm_flags)) {
-      return gbm_flags;
-    }
-    gbm_flags = GBM_BO_USE_TEXTURING;
-    if (gbm_device_is_format_supported(device_.get(), format, gbm_flags)) {
-      return gbm_flags;
-    }
-    return 0;
-  }
 #else
-  int GetSupportedGbmFlags(uint32_t format) {
-    if (gbm_device_is_format_supported(device_.get(), format,
-                                       GBM_BO_USE_SCANOUT)) {
-      return GBM_BO_USE_SCANOUT;
+    int gbm_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING;
+#endif
+    if (gbm_device_is_format_supported(device_.get(), format, gbm_flags)) {
+      return gbm_flags;
     }
+    gbm_flags &= ~GBM_BO_USE_SCANOUT;
+    if (gbm_device_is_format_supported(device_.get(), format, gbm_flags)) {
+      return gbm_flags;
+    }
+#if !defined(MINIGBM)
+    if (is_import &&
+        strcmp(gbm_device_get_backend_name(device_.get()), "drm") == 0) {
+      // TODO(crbug.com/1466015): remove this workaround when
+      // https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/23214 lands
+      // upstream.
+      if (format == DRM_FORMAT_NV12) {
+        return GetSupportedGbmFlags(DRM_FORMAT_R8, is_import) &
+               GetSupportedGbmFlags(DRM_FORMAT_GR88, is_import);
+      } else if (format == DRM_FORMAT_P010) {
+        return GetSupportedGbmFlags(DRM_FORMAT_R16, is_import) &
+               GetSupportedGbmFlags(DRM_FORMAT_GR1616, is_import);
+      } else if (format == DRM_FORMAT_YVU420) {
+        return GetSupportedGbmFlags(DRM_FORMAT_R8, is_import);
+      }
+    }
+#endif
     return 0;
   }
-#endif
 
  private:
   std::vector<uint64_t> GetFilteredModifiers(

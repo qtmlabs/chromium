@@ -206,7 +206,7 @@ class OzonePlatformWayland : public OzonePlatform,
       // imported as wl_buffer.
       auto* gbm_device = buffer_manager_->GetGbmDevice();
       if (!gbm_device || !gbm_device->CanCreateBufferForFormat(
-                             GetFourCCFormatFromBufferFormat(format))) {
+                             GetFourCCFormatFromBufferFormat(format), true)) {
         return false;
       }
     } else {

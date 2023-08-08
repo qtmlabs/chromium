@@ -274,7 +274,8 @@ bool OzoneImageBackingFactory::IsSupported(
   }
   auto* factory = ui::OzonePlatform::GetInstance()->GetSurfaceFactoryOzone();
   if (viz::HasEquivalentBufferFormat(format) &&
-      !factory->CanCreateNativePixmapForFormat(ToBufferFormat(format))) {
+      !factory->CanCreateNativePixmapForFormat(
+          ToBufferFormat(format), gmb_type == gfx::NATIVE_PIXMAP)) {
     return false;
   }
 

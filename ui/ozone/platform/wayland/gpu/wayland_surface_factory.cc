@@ -251,7 +251,7 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
 #if defined(WAYLAND_GBM)
   auto* gbm_device = buffer_manager_->GetGbmDevice();
   if (gbm_device && gbm_device->CanCreateBufferForFormat(
-                        GetFourCCFormatFromBufferFormat(format))) {
+                        GetFourCCFormatFromBufferFormat(format), true)) {
     scoped_refptr<GbmPixmapWayland> pixmap =
         base::MakeRefCounted<GbmPixmapWayland>(buffer_manager_);
 
@@ -263,6 +263,18 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
   }
 #endif
   return nullptr;
+}
+
+bool WaylandSurfaceFactory::CanCreateNativePixmapForFormat(
+    gfx::BufferFormat format,
+    bool is_import) {
+#if defined(WAYLAND_GBM)
+  GbmDevice* const gbm_device = buffer_manager_->GetGbmDevice();
+  return gbm_device && gbm_device->CanCreateBufferForFormat(
+                           GetFourCCFormatFromBufferFormat(format), is_import);
+#else
+  return false;
+#endif
 }
 
 void WaylandSurfaceFactory::CreateNativePixmapAsync(
@@ -287,7 +299,7 @@ WaylandSurfaceFactory::CreateNativePixmapFromHandle(
 #if defined(WAYLAND_GBM)
   auto* gbm_device = buffer_manager_->GetGbmDevice();
   if (gbm_device && gbm_device->CanCreateBufferForFormat(
-                        GetFourCCFormatFromBufferFormat(format))) {
+                        GetFourCCFormatFromBufferFormat(format), true)) {
     scoped_refptr<GbmPixmapWayland> pixmap =
         base::MakeRefCounted<GbmPixmapWayland>(buffer_manager_);
     if (pixmap->InitializeBufferFromHandle(widget, size, format,
@@ -347,7 +359,7 @@ WaylandSurfaceFactory::GetSupportedFormatsForTexturing() const {
   for (int j = 0; j <= static_cast<int>(gfx::BufferFormat::LAST); ++j) {
     const gfx::BufferFormat buffer_format = static_cast<gfx::BufferFormat>(j);
     if (gbm_device->CanCreateBufferForFormat(
-            GetFourCCFormatFromBufferFormat(buffer_format))) {
+            GetFourCCFormatFromBufferFormat(buffer_format), true)) {
       supported_buffer_formats.push_back(buffer_format);
     }
   }
