@@ -342,8 +342,11 @@ class OzonePlatformWayland : public OzonePlatform,
       // API is implemented. Note: this is restricted to Linux Desktop as Lacros
       // implements it at a higher level layer using ChromeOS' mojo croapi.
       properties->supports_color_picker_dialog = false;
-#endif
 
+      // The GPU process on Ozone/Wayland does not need to connect to a display
+      // server to function, so enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
+#endif
       initialised = true;
     }
 
