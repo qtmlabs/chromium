@@ -2609,6 +2609,7 @@ EGL_CLIENT_EXTENSIONS_EXTRA = [
   'EGL_ANGLE_platform_angle_opengl',
   'EGL_ANGLE_platform_angle_vulkan',
   'EGL_EXT_platform_device',
+  'EGL_EXT_platform_wayland',
   'EGL_MESA_platform_surfaceless',
 ]
 
