@@ -309,11 +309,10 @@ std::optional<float> WaylandWindow::GetPreferredScaleFactor() const {
   return root_surface_->preferred_scale_factor();
 }
 
-void WaylandWindow::OnPointerFocusChanged(bool focused) {
-  // Whenever the window gets the pointer focus back, the cursor shape must be
-  // updated. Otherwise, it is invalidated upon wl_pointer::leave and is not
-  // restored by the Wayland compositor.
-  if (focused && async_cursor_) {
+void WaylandWindow::OnPointerFocusChanged(bool focused) {}
+
+void WaylandWindow::ForceUpdateCursor() {
+  if (async_cursor_) {
     async_cursor_->AddCursorLoadedCallback(base::BindOnce(
         &WaylandWindow::OnCursorLoaded, AsWeakPtr(), async_cursor_));
   }
