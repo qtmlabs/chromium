@@ -175,6 +175,10 @@ gl::EGLDisplayPlatform GLOzoneEGLWayland::GetNativeDisplay() {
   if (connection_) {
     return connection_->GetNativeDisplay();
   }
+  if (gl::g_driver_egl.client_ext.b_EGL_MESA_platform_surfaceless) {
+    return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY,
+                                  EGL_PLATFORM_SURFACELESS_MESA);
+  }
   return gl::EGLDisplayPlatform(EGL_DEFAULT_DISPLAY);
 }
 
