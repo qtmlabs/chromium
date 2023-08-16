@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+upstream="${1?"please specify upstream commit or ref"}"
+
+for rev in $(git rev-list --reverse --no-merges HEAD --not "$upstream"); do
+	if git show -s --format="%s" $rev | grep '^\[qtmlabs\]' >/dev/null; then
+		continue
+	fi
+	git diff --full-index $rev{^,} -- . ':!/DEPS' ':!/qtmlabs' ':!chrome/test'
+done
+
+for manifest in $(find qtmlabs/patches -name MANIFEST | sort); do
+	patched_dir="$(dirname "$manifest" | sed 's,^qtmlabs/patches/,,')"
+	pushd "$patched_dir" >/dev/null
+	base_rev="$(git rev-list -1 HEAD -- .qtmlabs_base_marker)"
+	git diff --full-index --src-prefix="a/$patched_dir/" --dst-prefix="b/$patched_dir/" $base_rev HEAD
+	popd >/dev/null
+done
