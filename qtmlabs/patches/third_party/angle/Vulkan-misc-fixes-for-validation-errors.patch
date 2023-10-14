@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: msizanoen <msizanoen@qtmlabs.xyz>
+Date: Thu, 6 Jul 2023 13:14:00 +0200
+Subject: Vulkan: misc fixes for validation errors
+
+
+diff --git a/src/libANGLE/renderer/vulkan/vk_helpers.cpp b/src/libANGLE/renderer/vulkan/vk_helpers.cpp
+index bf1d56431a4b4ea7d1b4c8026bfec42f18f2c4b5..fd23e8d6fd8a7ea1de587a97ea5474ff6a9427bb 100644
+--- a/src/libANGLE/renderer/vulkan/vk_helpers.cpp
++++ b/src/libANGLE/renderer/vulkan/vk_helpers.cpp
+@@ -5719,6 +5719,9 @@ const void *ImageHelper::DeriveCreateInfoPNext(
+     (*imageListFormatsStorage)[0] = vk::GetVkFormatFromFormatID(actualFormatID);
+     (*imageListFormatsStorage)[1] = vk::GetVkFormatFromFormatID(additionalFormat);
+ 
++    *imageFormatListInfoStorage       = {};
++    imageFormatListInfoStorage->sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR;
++
+     if (rendererVk->getFeatures().supportsImageFormatList.enabled &&
+         rendererVk->haveSameFormatFeatureBits(actualFormatID, additionalFormat))
+     {
+@@ -5727,8 +5730,7 @@ const void *ImageHelper::DeriveCreateInfoPNext(
+ 
+         // There is just 1 additional format we might use to create a VkImageView for this
+         // VkImage
+-        imageFormatListInfoStorage->sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR;
+-        imageFormatListInfoStorage->pNext = pNext;
++        imageFormatListInfoStorage->pNext           = pNext;
+         imageFormatListInfoStorage->viewFormatCount = kImageListFormatCount;
+         imageFormatListInfoStorage->pViewFormats    = imageListFormatsStorage->data();
+ 
