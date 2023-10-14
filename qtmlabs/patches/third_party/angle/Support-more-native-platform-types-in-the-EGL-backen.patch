@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: msizanoen <msizanoen@qtmlabs.xyz>
+Date: Wed, 30 Aug 2023 06:56:29 +0200
+Subject: Support more native platform types in the EGL backend
+
+This allows applications to use the GBM, Wayland and X11 native platform
+types with ANGLE's EGL display backend.
+
+diff --git a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
+index fb0ae8249db0e433014f98e8688d5bd6e5fb14c3..6e7bf1cfa15378dc32987538b1392d7d515d9ef4 100644
+--- a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
++++ b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
+@@ -996,6 +996,24 @@ RendererGL *DisplayEGL::getRenderer() const
+     return mRenderer.get();
+ }
+ 
++angle::NativeWindowSystem DisplayEGL::getWindowSystem() const
++{
++    EGLAttrib platformType =
++        mDisplayAttributes.get(EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE, 0);
++    switch (platformType)
++    {
++        case EGL_PLATFORM_X11_EXT:
++        case EGL_PLATFORM_XCB_EXT:
++            return angle::NativeWindowSystem::X11;
++        case EGL_PLATFORM_WAYLAND_EXT:
++            return angle::NativeWindowSystem::Wayland;
++        case EGL_PLATFORM_GBM_MESA:
++            return angle::NativeWindowSystem::Gbm;
++        default:
++            return angle::NativeWindowSystem::Other;
++    }
++}
++
+ egl::Error DisplayEGL::validateImageClientBuffer(const gl::Context *context,
+                                                  EGLenum target,
+                                                  EGLClientBuffer clientBuffer,
+diff --git a/src/libANGLE/renderer/gl/egl/DisplayEGL.h b/src/libANGLE/renderer/gl/egl/DisplayEGL.h
+index eee714ce4da6913c7f24659b6b5ab3ae50db9a50..633f7be61413434d5da2f67f4707b8d7da83babb 100644
+--- a/src/libANGLE/renderer/gl/egl/DisplayEGL.h
++++ b/src/libANGLE/renderer/gl/egl/DisplayEGL.h
+@@ -89,6 +89,8 @@ class DisplayEGL : public DisplayGL
+ 
+     RendererGL *getRenderer() const override;
+ 
++    angle::NativeWindowSystem getWindowSystem() const override;
++
+     egl::Error validateImageClientBuffer(const gl::Context *context,
+                                          EGLenum target,
+                                          EGLClientBuffer clientBuffer,
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+index 65a440166494cb922360e259e986f239b22d07b7..c4e267a58248eb3fbca55feed8c93edcd7cdefa0 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+@@ -36,7 +36,11 @@ bool IsValidPlatformTypeForPlatformDisplayConnection(EGLAttrib platformType)
+ {
+     switch (platformType)
+     {
++        case EGL_PLATFORM_GBM_MESA:
+         case EGL_PLATFORM_SURFACELESS_MESA:
++        case EGL_PLATFORM_WAYLAND_EXT:
++        case EGL_PLATFORM_X11_EXT:
++        case EGL_PLATFORM_XCB_EXT:
+             return true;
+         default:
+             break;
+@@ -417,10 +421,26 @@ EGLDisplay FunctionsEGL::getPlatformDisplay(EGLAttrib platformType,
+     ASSERT(IsValidPlatformTypeForPlatformDisplayConnection(platformType));
+     switch (platformType)
+     {
++        case EGL_PLATFORM_GBM_MESA:
++            if (!hasExtension("EGL_MESA_platform_gbm"))
++                return EGL_NO_DISPLAY;
++            break;
+         case EGL_PLATFORM_SURFACELESS_MESA:
+             if (!hasExtension("EGL_MESA_platform_surfaceless"))
+                 return EGL_NO_DISPLAY;
+             break;
++        case EGL_PLATFORM_WAYLAND_EXT:
++            if (!hasExtension("EGL_EXT_platform_wayland"))
++                return EGL_NO_DISPLAY;
++            break;
++        case EGL_PLATFORM_X11_EXT:
++            if (!hasExtension("EGL_EXT_platform_x11"))
++                return EGL_NO_DISPLAY;
++            break;
++        case EGL_PLATFORM_XCB_EXT:
++            if (!hasExtension("EGL_EXT_platform_xcb"))
++                return EGL_NO_DISPLAY;
++            break;
+         default:
+             UNREACHABLE();
+             return EGL_NO_DISPLAY;
