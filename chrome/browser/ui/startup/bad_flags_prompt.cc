@@ -69,8 +69,10 @@ const char* const kBadFlags[] = {
     network::switches::kHostResolverRules,
     switches::kHostRules,
 
-    // These flags disable sandbox-related security.
+// These flags disable sandbox-related security.
+#if !BUILDFLAG(IS_LINUX)
     sandbox::policy::switches::kDisableGpuSandbox,
+#endif
     sandbox::policy::switches::kDisableSeccompFilterSandbox,
     sandbox::policy::switches::kDisableSetuidSandbox,
     sandbox::policy::switches::kNoSandbox,

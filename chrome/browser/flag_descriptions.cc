@@ -8034,6 +8034,11 @@ const char kVulkanForceYCbCrLinearSamplingDescription[] =
     " as supported by the graphics driver";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_LINUX)
+const char kDisableGpuSandboxName[] = "Disable GPU sandbox";
+const char kDisableGpuSandboxDescription[] = "Disables the GPU sandbox.";
+#endif  // BUILDFLAG(IS_LINUX)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order just like the header file.
