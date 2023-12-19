@@ -12068,8 +12068,14 @@ const FeatureEntry kFeatureEntries[] = {
      flag_descriptions::kVulkanForceYCbCrLinearSamplingName,
      flag_descriptions::kVulkanForceYCbCrLinearSamplingDescription,
      kOsLinux | kOsCrOS | kOsLacros,
-     SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)}
+     SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)},
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(IS_LINUX)
+    {"disable-gpu-sandbox", flag_descriptions::kDisableGpuSandboxName,
+     flag_descriptions::kDisableGpuSandboxDescription, kOsLinux,
+     SINGLE_VALUE_TYPE(sandbox::policy::switches::kDisableGpuSandbox)}
+#endif
     // NOTE: Adding a new flag requires adding a corresponding entry to enum
     // "LoginCustomFlags" in tools/metrics/histograms/enums.xml. See "Flag
     // Histograms" in tools/metrics/histograms/README.md (run the
