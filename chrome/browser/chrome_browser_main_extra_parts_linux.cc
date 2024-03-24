@@ -188,6 +188,8 @@ void ChromeBrowserMainExtraPartsLinux::PreEarlyInitialization() {
     command_line->AppendSwitchASCII("desktop-startup-id", desktop_startup_id);
   }
 #endif  // BUILDFLAG(IS_LINUX)
+
+  ChromeBrowserMainExtraPartsOzone::PreEarlyInitialization();
 }
 
 void ChromeBrowserMainExtraPartsLinux::PostBrowserStart() {

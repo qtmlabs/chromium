@@ -1570,11 +1570,6 @@
         "Mac": "stable",
         "Win": "stable",
       },
-      // When running under experimental platform variants, such as
-      // Linux/Wayland, EyeDropper base::Feature defined in the browser
-      // process is used to disable it at runtime, if needed.
-      base_feature: "none",
-      public: true,
     },
     {
       name: "FaceDetector",

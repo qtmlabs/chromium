@@ -16,6 +16,10 @@ ChromeBrowserMainExtraPartsOzone::ChromeBrowserMainExtraPartsOzone() = default;
 
 ChromeBrowserMainExtraPartsOzone::~ChromeBrowserMainExtraPartsOzone() = default;
 
+void ChromeBrowserMainExtraPartsOzone::PreEarlyInitialization() {
+    ui::OzonePlatform::PreEarlyInitialization();
+}
+
 void ChromeBrowserMainExtraPartsOzone::PostCreateMainMessageLoop() {
   auto shutdown_cb = base::BindOnce([] {
     chrome::SessionEnding();
