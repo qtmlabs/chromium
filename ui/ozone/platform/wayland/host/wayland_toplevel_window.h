@@ -219,9 +219,12 @@ class WaylandToplevelWindow : public WaylandWindow,
   bool ShouldTriggerStateChange(PlatformWindowState state,
                                 int64_t target_display_id) const;
 
-  // Takes ownership of the xdg-activation token if it can be used and a token
-  // was found.
-  std::optional<std::string> TakeActivationToken() const;
+  // Called when we obtain a xdg-activation-v1 token that we can use to activate
+  // this window.
+  void OnXdgActivationToken(std::string token);
+
+  // Determines if we can use xdg-activation-v1 to activate this window.
+  bool CanUseXdgActivation() const;
 
   WaylandOutput* GetWaylandOutputForDisplayId(int64_t display_id);
 
@@ -331,6 +334,8 @@ class WaylandToplevelWindow : public WaylandWindow,
   std::optional<float> last_sent_buffer_scale_;
 
   raw_ptr<WorkspaceExtensionDelegate> workspace_extension_delegate_ = nullptr;
+
+  base::WeakPtrFactory<WaylandToplevelWindow> weak_ptr_factory_{this};
 };
 
 }  // namespace ui
