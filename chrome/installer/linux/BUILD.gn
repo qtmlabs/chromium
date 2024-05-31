@@ -47,9 +47,6 @@ if (bundle_widevine_cdm) {
       [ "$root_out_dir/$widevine_cdm_path/libwidevinecdm.so" ]
 }
 
-if (angle_shared_libvulkan && !is_chromeos) {
-  packaging_files_shlibs += [ "$root_out_dir/libvulkan.so.1" ]
-}
 
 if (enable_swiftshader) {
   packaging_files_shlibs += [ "$root_out_dir/libvk_swiftshader.so" ]
@@ -187,11 +184,6 @@ strip_binary("strip_libEGL_shlib") {
 strip_binary("strip_libGLESv2_shlib") {
   binary_input = "$root_out_dir/libGLESv2.so"
   deps = [ "//third_party/angle:libGLESv2" ]
-}
-
-strip_binary("strip_libvulkan_shlib") {
-  binary_input = "$root_out_dir/libvulkan.so.1"
-  deps = [ "//third_party/vulkan-loader/src:libvulkan" ]
 }
 
 strip_binary("strip_libvk_swiftshader.shlib") {
@@ -383,12 +375,6 @@ group("installer_deps") {
   ]
   if (bundle_widevine_cdm) {
     public_deps += [ "//third_party/widevine/cdm" ]
-  }
-  if (angle_shared_libvulkan && !is_chromeos) {
-    public_deps += [
-      ":strip_libvulkan_shlib",
-      "//third_party/vulkan-loader/src:libvulkan",
-    ]
   }
   if (enable_swiftshader) {
     public_deps += [
