@@ -76,6 +76,7 @@
 #endif
 
 #if defined(WAYLAND_GBM)
+#include <gbm.h>
 #include "ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.h"
 #endif
 
@@ -189,6 +190,13 @@ class OzonePlatformWayland : public OzonePlatform,
     // supported.
     if (path_finder_.GetDrmRenderNodePath().empty())
       return false;
+
+#if !defined(MINIGBM)
+    // Mesa GBM does not support allocating multiplanar formats.
+    if (gfx::BufferFormatIsMultiplanar(format)) {
+      return false;
+    }
+#endif
 
     // When OzonePlatform instance is called from GPU process,
     // |supported_buffer_formats_| is empty. Supported buffer formats are sent
