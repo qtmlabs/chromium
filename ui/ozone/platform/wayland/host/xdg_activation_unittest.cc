@@ -15,6 +15,7 @@
 #include "ui/ozone/platform/wayland/test/mock_surface.h"
 #include "ui/ozone/platform/wayland/test/mock_wayland_platform_window_delegate.h"
 #include "ui/ozone/platform/wayland/test/test_keyboard.h"
+#include "ui/ozone/platform/wayland/test/test_util.h"
 #include "ui/ozone/platform/wayland/test/wayland_test.h"
 
 using ::testing::_;

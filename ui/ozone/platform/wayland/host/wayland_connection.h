@@ -21,7 +21,6 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/display/tablet_state.h"
 #include "ui/events/event.h"
-#include "ui/gl/gl_display.h"
 #include "ui/ozone/platform/wayland/common/wayland_object.h"
 #include "ui/ozone/platform/wayland/host/single_pixel_buffer.h"
 #include "ui/ozone/platform/wayland/host/wayland_buffer_manager_host.h"
@@ -119,6 +118,17 @@ class WaylandConnection {
   // is the Ash Chrome version.
   base::Version GetServerVersion() const;
 
+  // A correct display must be chosen when creating objects or calling
+  // roundrips.  That is, all the methods that deal with polling, pulling event
+  // queues, etc, must use original display. All the other methods that create
+  // various wayland objects must use |display_wrapper_| so that the new objects
+  // are associated with the correct event queue. Otherwise, they will use a
+  // default event queue, which we do not use. See the comment below about the
+  // |event_queue_|.
+  wl_display* display() const { return display_.get(); }
+  wl_display* display_wrapper() const {
+    return reinterpret_cast<wl_display*>(wrapped_display_.get());
+  }
   wl_compositor* compositor() const { return compositor_.get(); }
   // The server version of the compositor interface (might be higher than the
   // version binded).
@@ -360,14 +370,6 @@ class WaylandConnection {
            WaylandBufferManagerHost::SupportsImplicitSyncInterop();
   }
 
-  // Returns a sync callback, which is invoked when the server has processed all
-  // pending events prior to this sync point.
-  struct wl_callback* GetSyncCallback();
-
-  gl::EGLDisplayPlatform GetNativeDisplay();
-
-  struct wl_registry* GetRegistry();
-
  private:
   friend class WaylandConnectionTestApi;
 
@@ -400,18 +402,6 @@ class WaylandConnection {
   friend class XdgForeignWrapper;
   friend class ZwpIdleInhibitManager;
   friend class ZwpPrimarySelectionDeviceManager;
-
-  // A correct display must be chosen when creating objects or calling
-  // roundrips.  That is, all the methods that deal with polling, pulling event
-  // queues, etc, must use original display. All the other methods that create
-  // various wayland objects must use |display_wrapper_| so that the new objects
-  // are associated with the correct event queue. Otherwise, they will use a
-  // default event queue, which we do not use. See the comment below about the
-  // |event_queue_|.
-  wl_display* display() const { return display_.get(); }
-  wl_display* display_wrapper() const {
-    return reinterpret_cast<wl_display*>(wrapped_display_.get());
-  }
 
   void RegisterGlobalObjectFactory(const char* interface_name,
                                    wl::GlobalObjectFactory factory);

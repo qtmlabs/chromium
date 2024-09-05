@@ -72,6 +72,7 @@
 #include "ui/ozone/platform/wayland/test/test_output.h"
 #include "ui/ozone/platform/wayland/test/test_region.h"
 #include "ui/ozone/platform/wayland/test/test_touch.h"
+#include "ui/ozone/platform/wayland/test/test_util.h"
 #include "ui/ozone/platform/wayland/test/test_wayland_server_thread.h"
 #include "ui/ozone/platform/wayland/test/test_zaura_toplevel.h"
 #include "ui/ozone/platform/wayland/test/wayland_test.h"
@@ -261,7 +262,7 @@ class WaylandWindowTest : public WaylandTest {
       WaylandWindow* window,
       const MockWaylandPlatformWindowDelegate& delegate,
       int64_t viz_seq) {
-    WaylandConnectionTestApi(connection_.get()).SyncDisplay();
+    wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
     window->OnSequencePoint(viz_seq);
     window->root_surface()->ApplyPendingState();
   }
@@ -497,8 +498,7 @@ TEST_P(WaylandWindowTest, ApplyPendingStatesAndCommit) {
   window_->root_surface()->set_surface_buffer_scale(2);
   VerifyAndClearExpectations();
 
-  WaylandConnectionTestApi test_api(connection_.get());
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   PostToServerAndWait([id = surface_id_](wl::TestWaylandServerThread* server) {
     auto* mock_surface = server->GetObject<wl::MockSurface>(id);
@@ -514,7 +514,7 @@ TEST_P(WaylandWindowTest, ApplyPendingStatesAndCommit) {
   window_->root_surface()->Commit();
   VerifyAndClearExpectations();
 
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 }
 
 #if BUILDFLAG(IS_LINUX)
@@ -1113,8 +1113,7 @@ TEST_P(WaylandWindowTest, StartWithFullscreen) {
   auto window =
       delegate.CreateWaylandWindow(connection_.get(), std::move(properties));
 
-  WaylandConnectionTestApi test_api(connection_.get());
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   // Make sure the window is initialized to normal state from the beginning.
   EXPECT_EQ(PlatformWindowState::kNormal, window->GetPlatformWindowState());
@@ -1138,7 +1137,7 @@ TEST_P(WaylandWindowTest, StartWithFullscreen) {
   // The state of the window must already be fullscreen one.
   EXPECT_EQ(window->GetPlatformWindowState(), PlatformWindowState::kFullScreen);
 
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   Mock::VerifyAndClearExpectations(&delegate);
 
@@ -1170,8 +1169,7 @@ TEST_P(WaylandWindowTest, StartMaximized) {
   auto window =
       delegate.CreateWaylandWindow(connection_.get(), std::move(properties));
 
-  WaylandConnectionTestApi test_api(connection_.get());
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   // Make sure the window is initialized to normal state from the beginning.
   EXPECT_EQ(PlatformWindowState::kNormal, window->GetPlatformWindowState());
@@ -1194,7 +1192,7 @@ TEST_P(WaylandWindowTest, StartMaximized) {
   // The state of the window must already be fullscreen one.
   EXPECT_EQ(window->GetPlatformWindowState(), PlatformWindowState::kMaximized);
 
-  test_api.SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   Mock::VerifyAndClearExpectations(&delegate);
 
@@ -3013,7 +3011,7 @@ TEST_P(WaylandWindowTest, WaylandPopupSurfaceScale) {
     EXPECT_EQ(2, window_->applied_state().window_scale);
     wayland_popup->Show(false);
 
-    WaylandConnectionTestApi(connection_.get()).SyncDisplay();
+    wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
     // |wayland_popup|'s scale and bounds must change whenever its parents
     // scale is changed.
@@ -4017,7 +4015,7 @@ TEST_P(WaylandWindowTest, SetsPropertiesOnShow) {
 
   window->Hide();
 
-  WaylandConnectionTestApi(connection_.get()).SyncDisplay();
+  wl::SyncDisplay(connection_->display_wrapper(), *connection_->display());
 
   window->Show(false);
 
