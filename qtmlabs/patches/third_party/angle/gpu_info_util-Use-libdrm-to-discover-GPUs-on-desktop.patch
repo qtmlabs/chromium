@@ -1,0 +1,292 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: msizanoen <msizanoen@qtmlabs.xyz>
+Date: Tue, 8 Aug 2023 06:06:00 +0200
+Subject: gpu_info_util: Use libdrm to discover GPUs on desktop Linux
+
+This CL adds a new libdrm-based GPU discovery backend that's enabled by
+default on desktop Linux. This new backend will use the device ID of the
+DRM render node as the systemDeviceId, allowing Chromium to discover and
+manage multiple GPUs on Linux.
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 16797eeb2c299397ca78ec39fdb78be59d8fd063..6dc2fdda69328e4f3317500ad89a76f618c88aca 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -31,11 +31,14 @@ if (angle_has_build) {
+ }
+ 
+ declare_args() {
+-  # Use the PCI lib to collect GPU information on Linux.
++  # Use libdrm to collect GPU information on Linux.
++  use_libdrm = is_linux && angle_has_build
++
++  # Use the PCI lib to collect GPU information on Linux as a fallback.
+   use_libpci = (is_linux || is_chromeos) && (angle_use_x11 || use_ozone) &&
+                angle_has_build
+ 
+-  # Enable using Vulkan to collect system info as a fallback.
++  # Enable using Vulkan to collect system info as another fallback.
+   angle_enable_vulkan_system_info = false
+ 
+   # Link in system libGL, to work with apitrace.  See doc/DebuggingTips.md.
+@@ -700,6 +703,20 @@ angle_static_library("angle_gpu_info_util") {
+     libs += [ "pci" ]
+   }
+ 
++  if (use_libdrm) {
++    sources += libangle_gpu_info_util_libdrm_sources
++    defines += [ "GPU_INFO_USE_LIBDRM" ]
++
++    # When build_with_chromium=true we need to include "//build/config/linux/libdrm" while it's
++    # beneficial to be more specific with standalone ANGLE, especially when it comes to including it
++    # as a dependency in other projects (such as Dawn).
++    if (build_with_chromium) {
++      deps += [ "//build/config/linux/libdrm" ]
++    } else {
++      deps += [ "third_party/gn/libdrm" ]
++    }
++  }
++
+   if (is_apple) {
+     frameworks = [
+       "IOKit.framework",
+diff --git a/DEPS b/DEPS
+index c9cc4f6de300e079345e6ec08462296dd7a0def9..7a5eac82e099c6bd5b5e21f18e17271e3598f001 100644
+--- a/DEPS
++++ b/DEPS
+@@ -39,7 +39,7 @@ vars = {
+   # build ARC++ support libraries.
+   'checkout_android_native_support': 'checkout_android or checkout_chromeos',
+ 
+-  # Check out Mesa and libdrm in ANGLE's third_party folder.
++  # Check out Mesa in ANGLE's third_party folder.
+   'checkout_angle_mesa': False,
+ 
+   # Version of Chromium our Chromium-based DEPS are mirrored from.
+@@ -794,7 +794,7 @@ deps = {
+ 
+   'third_party/libdrm/src': {
+     'url': Var('chromium_git') + '/chromiumos/third_party/libdrm.git@ad78bb591d02162d3b90890aa4d0a238b2a37cde',
+-    'condition': 'checkout_angle_mesa',
++    'condition': 'not build_with_chromium',
+   },
+ 
+   # libjpeg_turbo is used by glmark2.
+diff --git a/scripts/export_targets.py b/scripts/export_targets.py
+index 37cfa05f163a73c7188eb6d08efcf069144068ab..39aecbf535d7648ba128751766ee863fcfd4b400 100755
+--- a/scripts/export_targets.py
++++ b/scripts/export_targets.py
+@@ -279,6 +279,7 @@ IGNORED_DIRECTORIES = {
+     '//buildtools/third_party/libc++',
+     '//third_party/libc++/src',
+     '//third_party/abseil-cpp',
++    '//third_party/gn/libdrm',
+     '//third_party/SwiftShader',
+     '//third_party/dawn',
+ }
+diff --git a/src/gpu_info_util/SystemInfo_internal.h b/src/gpu_info_util/SystemInfo_internal.h
+index 5cef5d49eea1b1f1e6c22543446b2e5391ee88f2..92e621005a63a3433cd42cc84e6d511c370f8431 100644
+--- a/src/gpu_info_util/SystemInfo_internal.h
++++ b/src/gpu_info_util/SystemInfo_internal.h
+@@ -19,6 +19,8 @@ namespace angle
+ bool GetPCIDevicesWithLibPCI(std::vector<GPUDeviceInfo> *devices);
+ // Defined in SystemInfo_x11 when GPU_INFO_USE_X11 is defined.
+ bool GetNvidiaDriverVersionWithXNVCtrl(std::string *version);
++// Defined in SystemInfo_libdrm when GPU_INFO_USE_LIBDRM is defined.
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices);
+ 
+ // Target specific helper functions that can be compiled on all targets
+ // Live in SystemInfo.cpp
+diff --git a/src/gpu_info_util/SystemInfo_libdrm.cpp b/src/gpu_info_util/SystemInfo_libdrm.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae9e455aa9ce34525e4e11e129fdaf6570d6e17b
+--- /dev/null
++++ b/src/gpu_info_util/SystemInfo_libdrm.cpp
+@@ -0,0 +1,77 @@
++//
++// Copyright 2023 The ANGLE Project Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++//
++
++// SystemInfo_libdrm.cpp: implementation of the libdrm-specific parts of SystemInfo.h
++
++#include "gpu_info_util/SystemInfo_internal.h"
++
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <xf86drm.h>
++#include <string>
++#include <vector>
++
++#if !defined(GPU_INFO_USE_LIBDRM)
++#    error SystemInfo_libdrm.cpp compiled without GPU_INFO_USE_LIBDRM
++#endif
++
++namespace angle
++{
++
++// Adds an entry per GPU found and fills the device, vendor and system device ID.
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices)
++{
++    int numDevices = drmGetDevices2(DRM_DEVICE_GET_PCI_REVISION, nullptr, 0);
++    if (numDevices <= 0)
++        return false;
++
++    std::vector<drmDevicePtr> drmDevices(numDevices);
++    if (drmGetDevices2(DRM_DEVICE_GET_PCI_REVISION, drmDevices.data(), numDevices) != numDevices)
++        return false;
++
++    for (drmDevicePtr drmDevice : drmDevices)
++    {
++        if (!(drmDevice->available_nodes & (1 << DRM_NODE_RENDER)))
++            continue;
++        const char *render_node = drmDevice->nodes[DRM_NODE_RENDER];
++
++        int fd = open(render_node, O_RDWR | O_CLOEXEC);
++        if (fd < 0)
++            continue;
++
++        struct stat sb;
++        if (fstat(fd, &sb) < 0)
++            continue;
++
++        drmVersionPtr version = drmGetVersion(fd);
++        std::string driverName(version->name, version->name_len);
++        drmFreeVersion(version);
++
++        close(fd);
++
++        // skip the virtual GEM kernel driver
++        if (driverName == "vgem")
++            continue;
++
++        GPUDeviceInfo info;
++        info.systemDeviceId = sb.st_rdev;
++        if (drmDevice->bustype == DRM_BUS_PCI)
++        {
++            info.vendorId   = drmDevice->deviceinfo.pci->vendor_id;
++            info.deviceId   = drmDevice->deviceinfo.pci->device_id;
++            info.revisionId = drmDevice->deviceinfo.pci->revision_id;
++        }
++
++        devices->push_back(info);
++    }
++
++    drmFreeDevices(drmDevices.data(), numDevices);
++
++    return !devices->empty();
++}
++
++}  // namespace angle
+diff --git a/src/gpu_info_util/SystemInfo_linux.cpp b/src/gpu_info_util/SystemInfo_linux.cpp
+index ce0c349e8435519bf48db99486cfcedab8ea0230..42797a3b70dbe062702ce809c3485a543cdbb808 100644
+--- a/src/gpu_info_util/SystemInfo_linux.cpp
++++ b/src/gpu_info_util/SystemInfo_linux.cpp
+@@ -69,16 +69,26 @@ bool GetPCIDevicesWithLibPCI(std::vector<GPUDeviceInfo> *devices)
+ }
+ #endif
+ 
++#if !defined(GPU_INFO_USE_LIBDRM)
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices)
++{
++    return false;
++}
++#endif
++
+ bool GetSystemInfo(SystemInfo *info)
+ {
+-    if (!GetPCIDevicesWithLibPCI(&(info->gpus)))
++    if (!GetDevicesWithLibDRM(&(info->gpus)))
+     {
++        if (!GetPCIDevicesWithLibPCI(&(info->gpus)))
++        {
+ #if defined(ANGLE_USE_VULKAN_SYSTEM_INFO)
+-        // Try vulkan backend to get GPU info
+-        return GetSystemInfoVulkan(info);
++            // Try vulkan backend to get GPU info
++            return GetSystemInfoVulkan(info);
+ #else
+-        return false;
++            return false;
+ #endif  // defined(ANGLE_HAS_VULKAN_SYSTEM_INFO)
++        }
+     }
+ 
+     if (info->gpus.size() == 0)
+diff --git a/src/libGLESv2.gni b/src/libGLESv2.gni
+index ed874b4bd4a9caaff901217a1c21675cb963cefa..6df1c891ebf849d3a5add3cfab09fb1e11459c27 100644
+--- a/src/libGLESv2.gni
++++ b/src/libGLESv2.gni
+@@ -205,6 +205,9 @@ libangle_gpu_info_util_vulkan_sources = [
+ libangle_gpu_info_util_libpci_sources =
+     [ "src/gpu_info_util/SystemInfo_libpci.cpp" ]
+ 
++libangle_gpu_info_util_libdrm_sources =
++    [ "src/gpu_info_util/SystemInfo_libdrm.cpp" ]
++
+ libangle_gpu_info_util_x11_sources = [ "src/gpu_info_util/SystemInfo_x11.cpp" ]
+ 
+ libangle_gpu_info_util_mac_sources = [
+diff --git a/third_party/gn/libdrm/BUILD.gn b/third_party/gn/libdrm/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..1b8eba942abdead0ccf1d04e7527d08fe15743f8
+--- /dev/null
++++ b/third_party/gn/libdrm/BUILD.gn
+@@ -0,0 +1,55 @@
++# Copyright 2016 The Chromium Authors
++# Copyright 2023 The ANGLE Project Authors
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++import("../../../gni/angle.gni")
++
++assert(is_linux || is_chromeos)
++
++libdrm_src = "$angle_root/third_party/libdrm"
++
++generated_static_table_fourcc_file =
++    "$target_gen_dir/src/generated_static_table_fourcc.h"
++fourcc_file = "$libdrm_src/include/drm/drm_fourcc.h"
++
++action("make_generated_static_table_fourcc") {
++  script = "$libdrm_src/gen_table_fourcc.py"
++  args = [
++    rebase_path(fourcc_file, root_build_dir),
++    rebase_path(generated_static_table_fourcc_file),
++  ]
++  outputs = [ generated_static_table_fourcc_file ]
++  inputs = [ fourcc_file ]
++}
++
++config("libdrm_config") {
++  include_dirs = [
++    "$libdrm_src",
++    "$libdrm_src/include",
++    "$libdrm_src/include/drm",
++  ]
++
++  # glibc version >= 2.25 explicitly include <sys/sysmacros.h>
++  cflags = [ "-DMAJOR_IN_SYSMACROS=1" ]
++}
++
++static_library("libdrm") {
++  sources = [
++    "$libdrm_src/xf86drm.c",
++    "$libdrm_src/xf86drmHash.c",
++    "$libdrm_src/xf86drmMode.c",
++    "$libdrm_src/xf86drmRandom.c",
++  ]
++
++  deps = [ ":make_generated_static_table_fourcc" ]
++
++  include_dirs = [
++    get_path_info(generated_static_table_fourcc_file, "dir"),
++    "$libdrm_src",
++    "$libdrm_src/include",
++  ]
++  configs -= [ "//build/config/compiler:chromium_code" ]
++  configs += [ "//build/config/compiler:no_chromium_code" ]
++
++  public_configs = [ ":libdrm_config" ]
++}
