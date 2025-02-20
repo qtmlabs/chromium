@@ -94,6 +94,12 @@ class VIEWS_EXPORT TextfieldController {
   // Gives the controller a chance to modify the context menu contents.
   virtual void UpdateContextMenu(ui::SimpleMenuModel* menu_contents) {}
 
+  // Allow the controller to change what's actually written to the clipboard.
+  virtual void AdjustTextForCutOrCopy(std::u16string& selected_text) {}
+
+  // Data is copied from an incognito window.
+  virtual bool ShouldMarkAsOffTheRecord();
+
  protected:
   virtual ~TextfieldController() = default;
 };

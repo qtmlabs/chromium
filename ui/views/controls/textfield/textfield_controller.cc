@@ -36,4 +36,8 @@ views::View::DropCallback TextfieldController::CreateDropCallback(
   return base::NullCallback();
 }
 
+bool TextfieldController::ShouldMarkAsOffTheRecord() {
+  return false;
+}
+
 }  // namespace views
