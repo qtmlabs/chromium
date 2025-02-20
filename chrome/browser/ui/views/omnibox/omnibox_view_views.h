@@ -288,6 +288,8 @@ class OmniboxViewViews
   views::View::DropCallback CreateDropCallback(
       const ui::DropTargetEvent& event) override;
   void UpdateContextMenu(ui::SimpleMenuModel* menu_contents) override;
+  void AdjustTextForCutOrCopy(std::u16string& selected_text) override;
+  bool ShouldMarkAsOffTheRecord() override;
 
   // ui::SimpleMenuModel::Delegate:
   bool IsCommandIdChecked(int id) const override;
