@@ -1280,3 +1280,45 @@ bool IsFullscreenTransitionOffsetSet() {
 BASE_FEATURE(kFullscreenTransition,
              "FullscreenTransition",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kIPHAblation, "IPHAblation", base::FEATURE_DISABLED_BY_DEFAULT);
+
+bool IsIPHAblationEnabled() {
+  return base::FeatureList::IsEnabled(kIPHAblation);
+}
+
+BASE_FEATURE(kIPHGestureRecognitionAblation,
+             "IPHGestureRecognitionAblation",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+const char kIPHGestureRecognitionInsideTapAblation[] =
+    "IPHGestureRecognitionInsideTapAblation";
+const char kIPHGestureRecognitionOutsideTapAblation[] =
+    "IPHGestureRecognitionOutsideTapAblation";
+const char kIPHGestureRecognitionPanAblation[] =
+    "IPHGestureRecognitionPanAblation";
+const char kIPHGestureRecognitionSwipeAblation[] =
+    "IPHGestureRecognitionSwipeAblation";
+
+bool IsIPHGestureRecognitionInsideTapAblationEnabled() {
+  return base::GetFieldTrialParamByFeatureAsBool(
+      kIPHGestureRecognitionAblation, kIPHGestureRecognitionInsideTapAblation,
+      false);
+}
+
+bool IsIPHGestureRecognitionOutsideTapAblationEnabled() {
+  return base::GetFieldTrialParamByFeatureAsBool(
+      kIPHGestureRecognitionAblation, kIPHGestureRecognitionOutsideTapAblation,
+      false);
+}
+
+bool IsIPHGestureRecognitionPanAblationEnabled() {
+  return base::GetFieldTrialParamByFeatureAsBool(
+      kIPHGestureRecognitionAblation, kIPHGestureRecognitionPanAblation, false);
+}
+
+bool IsIPHGestureRecognitionSwipeAblationEnabled() {
+  return base::GetFieldTrialParamByFeatureAsBool(
+      kIPHGestureRecognitionAblation, kIPHGestureRecognitionSwipeAblation,
+      false);
+}

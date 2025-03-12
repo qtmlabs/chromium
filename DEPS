@@ -284,7 +284,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling V8
   # and whatever else without interference from each other.
-  'v8_revision': '18b72e1e53dc58da657f8a2616cfa230ac354ad6',
+  'v8_revision': '56ebf22bcb4f4ac49c7aa973818bc0ad6ba925e3',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling ANGLE
   # and whatever else without interference from each other.
@@ -372,7 +372,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling devtools-frontend
   # and whatever else without interference from each other.
-  'devtools_frontend_revision': '044764a564924c9aa0897ba8c50149acc7ddf364',
+  'devtools_frontend_revision': '65b3f414b81ffe4df49202af6fc75bc26a3cb109',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libprotobuf-mutator
   # and whatever else without interference from each other.
@@ -1448,7 +1448,7 @@ deps = {
 
   'src/clank': {
     'url': Var('chrome_git') + '/clank/internal/apps.git' + '@' +
-    '539782278be6f930e63b910687795e6e4e09e321',
+    'e875a6c56a44f02b2968dfef72a9b804843c663a',
     'condition': 'checkout_android and checkout_src_internal',
   },
 
@@ -4378,7 +4378,7 @@ deps = {
   # grepping.
   'src/chrome/installer/mac/internal': {
       'url': Var('chrome_git') + '/chrome/installer/mac/internal.git' + '@' +
-        'bff19c50fa5c3177e594b9c5d07567b3ff5f4d65',
+        'f5c2c8702a11e3bcc1aa24df3e0df8d38d231c3b',
       'condition': 'checkout_src_internal',
   },
 

@@ -96,7 +96,9 @@
 #include "components/dom_distiller/core/dom_distiller_features.h"
 #include "components/dom_distiller/core/dom_distiller_switches.h"
 #include "components/download/public/common/download_features.h"
+#include "components/enterprise/buildflags/buildflags.h"
 #include "components/enterprise/data_controls/core/browser/features.h"
+#include "components/enterprise/obfuscation/core/utils.h"
 #include "components/error_page/common/error_page_switches.h"
 #include "components/feature_engagement/public/feature_constants.h"
 #include "components/feature_engagement/public/feature_list.h"
@@ -11816,19 +11818,13 @@ const FeatureEntry kFeatureEntries[] = {
          password_manager::features::kMarkAllCredentialsAsLeaked)},
 #endif  // !BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-    {"vulkan-force-ycbcr-linear-sampling",
-     flag_descriptions::kVulkanForceYCbCrLinearSamplingName,
-     flag_descriptions::kVulkanForceYCbCrLinearSamplingDescription,
-     kOsLinux | kOsCrOS,
-     SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)},
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+    {"enterprise-file-obfuscation",
+     flag_descriptions::kEnterpriseFileObfuscationName,
+     flag_descriptions::kEnterpriseFileObfuscationDescription, kOsDesktop,
+     FEATURE_VALUE_TYPE(enterprise_obfuscation::kEnterpriseFileObfuscation)},
+#endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
 
-#if BUILDFLAG(IS_LINUX)
-    {"disable-gpu-sandbox", flag_descriptions::kDisableGpuSandboxName,
-     flag_descriptions::kDisableGpuSandboxDescription, kOsLinux,
-     SINGLE_VALUE_TYPE(sandbox::policy::switches::kDisableGpuSandbox)},
-#endif
     // NOTE: Adding a new flag requires adding a corresponding entry to enum
     // "LoginCustomFlags" in tools/metrics/histograms/enums.xml. See "Flag
     // Histograms" in tools/metrics/histograms/README.md (run the
