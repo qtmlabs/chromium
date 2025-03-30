@@ -134,7 +134,7 @@
 <translation id="1509960214886564027">Các tính năng trên nhiều trang web có thể hoạt động không đúng cách</translation>
 <translation id="1513858653616922153">Xóa mật khẩu</translation>
 <translation id="1517166097004694782">Ẩn tuỳ chọn "Tiếp tục trên thẻ này"</translation>
-<translation id="1520027731907768768">Nhận thông báo khi các sản phẩm bạn theo dõi được giảm giá. =</translation>
+<translation id="1520027731907768768">Nhận thông báo khi sản phẩm bạn theo dõi giảm giá.</translation>
 <translation id="1521774566618522728">Hoạt động hôm nay</translation>
 <translation id="1524563461097350801">Không, cảm ơn</translation>
 <translation id="1531038290222364269">Hiển thị thẻ</translation>
@@ -179,7 +179,7 @@
 <translation id="1713777106376424209">Hãng vận chuyển</translation>
 <translation id="1715515772563243997">Nếu tin tưởng <ph name="SITE" />, bạn có thể sử dụng mật khẩu đã lưu để đăng nhập.</translation>
 <translation id="1728549374069268714">Dán và truy cập</translation>
-<translation id="1732468323901456775">Bật thông báo của <ph name="MODULE_NAME" /></translation>
+<translation id="1732468323901456775">Bật thông báo cho <ph name="MODULE_NAME" /></translation>
 <translation id="1740468249224277719">Nhấn đúp để cài đặt.</translation>
 <translation id="1740650426894359238">Chuyển sang một hồ sơ khác</translation>
 <translation id="1743244221910283364">Loại bỏ thay đổi</translation>
@@ -675,7 +675,7 @@ Bạn đang dùng công cụ tìm kiếm <ph name="DSE_NAME" />. Để xoá nh�
 <translation id="3986739045730058129">Chuyển đến thẻ</translation>
 <translation id="3992684624889376114">Giới thiệu về trang này</translation>
 <translation id="3993594519743675442">Ẩn thao tác Đặt lời nhắc</translation>
-<translation id="3994422733891749358">Chọn thông báo mà bạn muốn nhận</translation>
+<translation id="3994422733891749358">Chọn thông báo bạn muốn nhận</translation>
 <translation id="3994522032746736727">Đăng nhập bằng <ph name="EMAIL" /></translation>
 <translation id="3994911892367422121">TÔI HIỂU</translation>
 <translation id="3995521777587992544">Thanh tiến trình tải trang, đã tải <ph name="EMAIL" />.</translation>
@@ -925,7 +925,7 @@ Bạn đang dùng công cụ tìm kiếm <ph name="DSE_NAME" />. Để xoá nh�
 <translation id="507187271399539513">{count,plural, =1{Phương thức thanh toán {position}/{count}}other{Phương thức thanh toán {position}/{count}}}</translation>
 <translation id="5075939510584558547">Lưu mà không mã hoá</translation>
 <translation id="5076534614343816664">Theo dõi giá</translation>
-<translation id="5078303485429639424">Bật thông báo của <ph name="FEATURE_NAME" /></translation>
+<translation id="5078303485429639424">Bật thông báo cho <ph name="FEATURE_NAME" /></translation>
 <translation id="5079950360618752063">Sử dụng mật khẩu đề xuất</translation>
 <translation id="5083464117946352670">Không thể xác định kích thước tệp.</translation>
 <translation id="5085558938118581974">Tìm kiếm trên thẻ của các thiết bị đã đồng bộ hoá</translation>
@@ -1609,7 +1609,7 @@ Các trang web không thể dùng cookie để giám sát hoạt động duyệt
 
 Các trang web có thể dùng cookie để giám sát hoạt động duyệt web của bạn trên nhiều trang web, chẳng hạn như để điều chỉnh quảng cáo cho phù hợp với bạn.</translation>
 <translation id="7971136598759319605">Hoạt động 1 ngày trước</translation>
-<translation id="7975036700432177008">Dùng thử</translation>
+<translation id="7975036700432177008">Thử</translation>
 <translation id="797588153137233716">Trình đơn → Nhật ký → Xoá dữ liệu duyệt web</translation>
 <translation id="7977451675950311423">Cảnh báo bạn nếu bạn sử dụng mật khẩu đã bị lộ trong một sự cố rò rỉ dữ liệu.</translation>
 <translation id="797824194429476746">Thẻ sẽ vẫn mở trên thiết bị này nhưng nhóm sẽ bị xoá vĩnh viễn.</translation>

@@ -309,7 +309,7 @@ Sadece parolanıza sahip olan kişiler şifrelenmiş verilerinizi okuyabilir. Pa
 <translation id="2450083983707403292"><ph name="FILE_NAME" /> dosyasını tekrar indirmeye başlamak istiyor musunuz?</translation>
 <translation id="2451607499823206582">İzleniyor</translation>
 <translation id="2453860139492968684">Tamamlandı</translation>
-<translation id="2461378706168271257">Sekmelerimde ara</translation>
+<translation id="2461378706168271257">Sekmelerinizde arayın</translation>
 <translation id="2461822463642141190">Şu an</translation>
 <translation id="2468444275314013497">Tarayıcınız iyi durumda</translation>
 <translation id="2472163211318554013">Chrome'dan en iyi şekilde yararlanmak için oturum açın</translation>
@@ -497,7 +497,7 @@ Sadece parolanıza sahip olan kişiler şifrelenmiş verilerinizi okuyabilir. Pa
 <translation id="3269093882174072735">Resim yükle</translation>
 <translation id="327204079441056603">Bu cihazda şifrelerin kaydedilme şeklini değiştirdik</translation>
 <translation id="3280562213547448728">Sesli arama</translation>
-<translation id="3282568296779691940">Chrome'da oturum aç</translation>
+<translation id="3282568296779691940">Chrome'da Oturum Aç</translation>
 <translation id="3285065882678541460">{TAB_COUNT,plural, =1{<ph name="TAB_GROUPS_PART" />, <ph name="TAB_COUNT_ONE" /> sekme}other{<ph name="TAB_GROUPS_PART" />, <ph name="TAB_COUNT_MANY" /> sekme}}</translation>
 <translation id="3293181007446299124">Tarama geçmişiniz cihazınızda gizli tutulur ve raporlar, kimliğinizin korunması için gecikmeli olarak gönderilir</translation>
 <translation id="3301936297336370235">Şifre önerisi onayı</translation>
@@ -936,7 +936,7 @@ Diğer Google hizmetlerinden yapılan aramalar ve etkinlikler gibi Google hesab�
 <translation id="5326246328175179736">Bu hesabı kullanarak oturum açamazsınız</translation>
 <translation id="5328542107300944283"><ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> ile kullanın</translation>
 <translation id="5342314432463739672">İzin istekleri</translation>
-<translation id="534580735623577507"><ph name="TIME_PERIOD" /> itibarıyla ziyaret edilen site yok</translation>
+<translation id="534580735623577507"><ph name="TIME_PERIOD" /> içinde ziyaret edilen site yok</translation>
 <translation id="5355191726083956201">Gelişmiş Koruma açık</translation>
 <translation id="5364112109233799727">Hakkında geri bildirim paylaştığınız sayfanın URL\u2019si, bu özelliğin geliştirilmesi için gerçek kişiler tarafından incelenmek üzere Google'a gönderilir.</translation>
 <translation id="5375374982898812658">"<ph name="GROUP_NAME" />" sekme grubuna erişiminizi anında kaybedersiniz ve grup tüm cihazlarınızdan silinir</translation>
@@ -1583,7 +1583,7 @@ Bu ayarı değiştirmek için <ph name="BEGIN_LINK" />hesabınızdaki Chrome ver
 <translation id="8084864785646838999">Geçmişinizin bir kısmı burada görünmeyebilir. Tüm Chrome geçmişinizi görmek için Chrome geçmişinin tamamını açın. Google Hesabınızın <ph name="BEGIN_LINK" />myactivity.google.com<ph name="END_LINK" /> adresinde başka biçimlerde tarama geçmişi olabilir.</translation>
 <translation id="8088176524274673045">Yakınlardaki kişilerle paylaşmak için bu QR Kodunu taramalarını sağlayın</translation>
 <translation id="8090732854597034573">Yardıma ihtiyacınız olursa ebeveyninize sorun</translation>
-<translation id="8101414242770404289"><ph name="TIME_PERIOD" /> itibarıyla sekme yok</translation>
+<translation id="8101414242770404289"><ph name="TIME_PERIOD" /> içinde açılan sekme yok</translation>
 <translation id="8103578431304235997">Gizli Sekme</translation>
 <translation id="8105613260829665809">Devam ederek <ph name="BEGIN_TOS_LINK" />Hizmet Şartları<ph name="END_TOS_LINK" />'nı kabul etmiş olursunuz.\nChrome, uygulamanın iyileştirilmesine yardımcı olmak için kullanım ve kilitlenme verilerini Google'a gönderir. <ph name="BEGIN_UMA_LINK" />Yönet<ph name="END_UMA_LINK" /></translation>
 <translation id="8105893657415066307"><ph name="DESCRIPTION" /> <ph name="SEPARATOR" /> <ph name="FILE_SIZE" /></translation>
