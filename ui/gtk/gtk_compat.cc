@@ -129,18 +129,7 @@ bool LoadGtkImpl() {
                           &gtk_version)) {
     gtk_version = 0;
   }
-  auto env = base::Environment::Create();
-  const auto desktop = base::nix::GetDesktopEnvironment(env.get());
-  if (!gtk_version && desktop == base::nix::DESKTOP_ENVIRONMENT_GNOME) {
-    // GNOME is currently the only desktop to support GTK4 starting with version
-    // 42+. Try to match the loaded GTK version with the GNOME GTK version.
-    // Checking the GNOME version is not necessary since GTK4 is available iff
-    // GNOME is version 42+. This is the case for Debian, Ubuntu, and the
-    // RPM-based distributions that are supported.
-    gtk_version = 4;
-  }
-  // Prefer GTK3 for non-GNOME desktops as the GTK4 ecosystem is still immature.
-  return gtk_version == 4 ? LoadGtk4() || LoadGtk3() : LoadGtk3() || LoadGtk4();
+  return gtk_version == 3 ? LoadGtk3() || LoadGtk4() : LoadGtk4() || LoadGtk3();
 }
 
 gfx::Insets InsetsFromGtkBorder(const GtkBorder& border) {
