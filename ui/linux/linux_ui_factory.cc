@@ -181,27 +181,7 @@ GetLinuxUiThemes() {
 }
 
 SystemTheme GetDefaultSystemTheme() {
-  std::unique_ptr<base::Environment> env = base::Environment::Create();
-
-  switch (base::nix::GetDesktopEnvironment(env.get())) {
-    case base::nix::DESKTOP_ENVIRONMENT_CINNAMON:
-    case base::nix::DESKTOP_ENVIRONMENT_GNOME:
-    case base::nix::DESKTOP_ENVIRONMENT_PANTHEON:
-    case base::nix::DESKTOP_ENVIRONMENT_UNITY:
-    case base::nix::DESKTOP_ENVIRONMENT_XFCE:
-    case base::nix::DESKTOP_ENVIRONMENT_COSMIC:
-      return SystemTheme::kGtk;
-    case base::nix::DESKTOP_ENVIRONMENT_KDE3:
-    case base::nix::DESKTOP_ENVIRONMENT_KDE4:
-    case base::nix::DESKTOP_ENVIRONMENT_KDE5:
-    case base::nix::DESKTOP_ENVIRONMENT_KDE6:
-    case base::nix::DESKTOP_ENVIRONMENT_UKUI:
-    case base::nix::DESKTOP_ENVIRONMENT_DEEPIN:
-    case base::nix::DESKTOP_ENVIRONMENT_LXQT:
-      return SystemTheme::kQt;
-    case base::nix::DESKTOP_ENVIRONMENT_OTHER:
-      return SystemTheme::kDefault;
-  }
+  return SystemTheme::kDefault;
 }
 
 }  // namespace ui
