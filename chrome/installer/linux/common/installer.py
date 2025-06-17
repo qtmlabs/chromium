@@ -521,13 +521,6 @@ class InstallerConfig:
                 is_optional=True,
             ),
             Artifact(
-                "libvulkan.so.1.stripped",
-                "libvulkan.so.1",
-                ArtifactType.BINARY,
-                self.shlib_perms,
-                is_optional=True,
-            ),
-            Artifact(
                 "vk_swiftshader_icd.json",
                 "vk_swiftshader_icd.json",
                 ArtifactType.BINARY,
