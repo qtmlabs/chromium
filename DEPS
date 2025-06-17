@@ -4985,7 +4985,13 @@ hooks = [
                '--input-public',
                'src/chromeos/tast_control_disabled_tests_public_builders.txt'],
   },
-
+  # Apply QTM Labs specific patches
+  {
+    'name': 'qtmlabs_apply_patches',
+    'pattern': '.',
+    'condition': 'host_os == "linux"',
+    'action': ['src/qtmlabs/apply_all_patches'],
+  },
 ]
 
 # Add any corresponding DEPS files from this list to chromium.exclusions in

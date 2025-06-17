@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tree="$1"
+patches="$2"
+
+qtmlabs/setup_autopatch "$tree"
+
+for patch in $(cat "$patches/MANIFEST"); do
+	git -C "$tree" am "$(realpath "$patches/$patch")"
+done
