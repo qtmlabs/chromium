@@ -23,10 +23,6 @@ export class TestAppearanceBrowserProxy extends TestBrowserProxy implements
       'recordVerticalTabStripModeChanged',
       'resetPinnedToolbarActions',
       'useDefaultTheme',
-      // <if expr="is_linux">
-      'useGtkTheme',
-      'useQtTheme',
-      // </if>
       'validateStartupPage',
       'pinnedToolbarActionsAreDefault',
     ]);
@@ -83,16 +79,6 @@ export class TestAppearanceBrowserProxy extends TestBrowserProxy implements
   useDefaultTheme() {
     this.methodCalled('useDefaultTheme');
   }
-
-  // <if expr="is_linux">
-  useGtkTheme() {
-    this.methodCalled('useGtkTheme');
-  }
-
-  useQtTheme() {
-    this.methodCalled('useQtTheme');
-  }
-  // </if>
 
   setDefaultZoom(defaultZoom: number) {
     this.defaultZoom_ = defaultZoom;

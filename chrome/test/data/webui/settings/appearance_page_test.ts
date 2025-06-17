@@ -116,85 +116,6 @@ suite('AppearanceHandler', function() {
 
   const THEME_ID_PREF = 'prefs.extensions.theme.id.value';
 
-  // <if expr="is_linux">
-  const SYSTEM_THEME_PREF = 'prefs.extensions.theme.system_theme.value';
-
-  test('useDefaultThemeLinux', async () => {
-    await colorSchemeHandler.whenCalled('initializeColorSchemeMode');
-
-    assertFalse(!!appearancePage.get(THEME_ID_PREF));
-    assertEquals(appearancePage.get(SYSTEM_THEME_PREF), SystemTheme.DEFAULT);
-    // No custom nor system theme in use; "USE CLASSIC" should be hidden.
-    assertFalse(!!appearancePage.shadowRoot!.querySelector('#useDefault'));
-    // The color scheme toggle should be visible when the classic theme is used.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearancePage.set(SYSTEM_THEME_PREF, SystemTheme.GTK);
-    flush();
-    // If the system theme is in use, "USE CLASSIC" should show.
-    assertTrue(!!appearancePage.shadowRoot!.querySelector('#useDefault'));
-    // The color scheme toggle should be hidden when the GTK theme is used.
-    assertFalse(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearancePage.set(SYSTEM_THEME_PREF, SystemTheme.DEFAULT);
-    appearancePage.set(THEME_ID_PREF, 'fake theme id');
-    flush();
-
-    // With a custom theme installed, "USE CLASSIC" should show.
-    const button =
-        appearancePage.shadowRoot!.querySelector<HTMLElement>('#useDefault');
-    assertTrue(!!button);
-
-    button.click();
-    return appearanceBrowserProxy.whenCalled('useDefaultTheme');
-  });
-
-  test('useGtkThemeLinux', async () => {
-    await colorSchemeHandler.whenCalled('initializeColorSchemeMode');
-
-    assertFalse(!!appearancePage.get(THEME_ID_PREF));
-    appearancePage.set(SYSTEM_THEME_PREF, SystemTheme.GTK);
-    flush();
-    // The "USE GTK+" button shouldn't be showing if it's already in use.
-    assertFalse(!!appearancePage.shadowRoot!.querySelector('#useGtk'));
-    // The color scheme toggle should be hidden when the GTK theme is used.
-    assertFalse(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearanceBrowserProxy.setIsChildAccount(true);
-    appearancePage.set(SYSTEM_THEME_PREF, SystemTheme.DEFAULT);
-    flush();
-    // Child account users have their own theme and can't use GTK+ theme.
-    assertFalse(!!appearancePage.shadowRoot!.querySelector('#useDefault'));
-    assertFalse(!!appearancePage.shadowRoot!.querySelector('#useGtk'));
-    // If there's no "USE" buttons, the container should be hidden.
-    assertTrue(
-        appearancePage.shadowRoot!
-            .querySelector<HTMLElement>('#themesSecondaryActions')!.hidden);
-    // The color scheme toggle should be visible when the classic theme is used,
-    // for child accounts.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearanceBrowserProxy.setIsChildAccount(false);
-    appearancePage.set(THEME_ID_PREF, 'fake theme id');
-    flush();
-    // If there's "USE" buttons again, the container should be visible.
-    assertTrue(!!appearancePage.shadowRoot!.querySelector('#useDefault'));
-    assertFalse(
-        appearancePage.shadowRoot!
-            .querySelector<HTMLElement>('#themesSecondaryActions')!.hidden);
-    // The color scheme toggle should be visible when a custom theme is used.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    const button =
-        appearancePage.shadowRoot!.querySelector<HTMLElement>('#useGtk');
-    assertTrue(!!button);
-
-    button.click();
-    return appearanceBrowserProxy.whenCalled('useGtkTheme');
-  });
-  // </if>
-
-  // <if expr="not is_linux">
   test('useDefaultTheme', function() {
     assertFalse(!!appearancePage.get(THEME_ID_PREF));
     assertFalse(!!appearancePage.shadowRoot!.querySelector('#useDefault'));
@@ -247,7 +168,6 @@ suite('AppearanceHandler', function() {
     assertFalse(
         appearancePage.shadowRoot!.querySelector('managed-dialog')!.hidden);
   });
-  // </if>
 
   test('openCustomizeChrome', function() {
     createAppearancePage();
