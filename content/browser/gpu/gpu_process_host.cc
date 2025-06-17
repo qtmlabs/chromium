@@ -292,6 +292,7 @@ static const char* const kSwitchNames[] = {
     switches::kTestGLLib,
     switches::kUseFakeMjpegDecodeAccelerator,
     switches::kUseGpuInTests,
+    switches::kVulkanForceYCbCrLinearSampling,
     switches::kWebViewDrawFunctorUsesVulkan,
     switches::kSuppressPerformanceLogs,
 #if BUILDFLAG(IS_MAC)
