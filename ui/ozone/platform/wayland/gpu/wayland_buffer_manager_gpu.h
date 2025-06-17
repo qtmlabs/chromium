@@ -164,6 +164,10 @@ class WaylandBufferManagerGpu : public ozone::mojom::WaylandBufferManagerGpu {
     drm_modifiers_filter_ = std::move(drm_modifiers_filter);
   }
 
+  const base::FilePath& drm_render_node_path() const {
+    return drm_render_node_path_;
+  }
+
   // Adds a WaylandBufferManagerGpu binding.
   void AddBindingWaylandBufferManagerGpu(
       mojo::PendingReceiver<ozone::mojom::WaylandBufferManagerGpu> receiver);
@@ -249,6 +253,8 @@ class WaylandBufferManagerGpu : public ozone::mojom::WaylandBufferManagerGpu {
   void MaybeCreateGbmDevice();
   // Used by the gbm_device for self creation.
   base::ScopedFD drm_render_node_fd_;
+  // Used for EGL device selection.
+  base::FilePath drm_render_node_path_;
   // A DRM render node based gbm device.
   std::unique_ptr<GbmDevice> gbm_device_;
   // When set, avoids creating a real gbm_device. Instead, tests that set
