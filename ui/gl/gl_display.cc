@@ -60,6 +60,7 @@ std::vector<const char*> GetAttribArrayFromStringVector(
 }
 
 EGLDisplay GetPlatformANGLEDisplay(
+    EGLenum native_platform,
     EGLNativeDisplayType display,
     EGLenum platform_type,
     const std::vector<std::string>& enabled_features,
@@ -70,6 +71,11 @@ EGLDisplay GetPlatformANGLEDisplay(
 
   display_attribs.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
   display_attribs.push_back(static_cast<EGLAttrib>(platform_type));
+
+  if (native_platform != 0) {
+    display_attribs.push_back(EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE);
+    display_attribs.push_back(native_platform);
+  }
 
   if (platform_type == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE) {
     base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -172,64 +178,72 @@ EGLDisplay GetDisplayFromType(
     extra_display_attribs.push_back(static_cast<EGLint>(display_key));
   }
   EGLNativeDisplayType display = native_display.GetDisplay();
+  EGLenum native_platform = native_display.GetPlatform();
   switch (display_type) {
     case DEFAULT:
     case SWIFT_SHADER: {
-      if (native_display.GetPlatform() != 0) {
-        return eglGetPlatformDisplay(native_display.GetPlatform(),
+      if (native_platform != 0) {
+        return eglGetPlatformDisplay(native_platform,
                                      reinterpret_cast<void*>(display), nullptr);
       }
       return eglGetDisplay(display);
     }
     case ANGLE_D3D9:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_D3D11:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_D3D11_WARP:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_D3D11_NULL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_OPENGL:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_OPENGL_EGL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_OPENGL_NULL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_OPENGLES:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
           enabled_angle_features, disabled_angle_features,
           extra_display_attribs);
     case ANGLE_OPENGLES_EGL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
           enabled_angle_features, disabled_angle_features,
           extra_display_attribs);
     case ANGLE_OPENGLES_NULL:
@@ -237,54 +251,58 @@ EGLDisplay GetDisplayFromType(
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
           enabled_angle_features, disabled_angle_features,
           extra_display_attribs);
     case ANGLE_NULL:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_VULKAN:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_VULKAN_NULL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_D3D11on12:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_D3D11ON12_ANGLE);
       extra_display_attribs.push_back(EGL_TRUE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_SWIFTSHADER:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE);
 #if BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(IS_OZONE_X11)
-      extra_display_attribs.push_back(
-          EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE);
-      extra_display_attribs.push_back(
-          EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE);
+      native_platform = EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE;
 #endif  // BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(IS_OZONE_X11)
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_METAL:
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     case ANGLE_METAL_NULL:
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_NULL_ANGLE);
       return GetPlatformANGLEDisplay(
-          display, EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE, enabled_angle_features,
-          disabled_angle_features, extra_display_attribs);
+          native_platform, display, EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE,
+          enabled_angle_features, disabled_angle_features,
+          extra_display_attribs);
     default:
       NOTREACHED();
   }
