@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Sat, 12 Jul 2025 22:34:38 +0700
+Subject: vulkan: Retry with immutable format before removing usage flags for
+ DMA-BUF import
+
+The Intel ANV Vulkan driver restrict what usages are available with CCS
+modifiers when creating a Vulkan image with mutable format. This may
+result in WebGL rendering buffers allocated from Ozone being imported
+without rendering capability.
+
+This fixes an issue with Google Earth not working on Ozone/Wayland when
+using the ANGLE Vulkan backend.
+
+diff --git a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
+index 820f6024c8b855a16f092cb2681b08b18a490950..4c58ec0d13599ae15260042b004b9413946f69f8 100644
+--- a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
++++ b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
+@@ -361,24 +361,32 @@ VkImageUsageFlags FindSupportedUsageFlagsForFormat(
+     vk::Renderer *renderer,
+     VkFormat format,
+     uint64_t drmModifier,
+-    VkImageFormatListCreateInfo imageFormatListCreateInfo,
++    VkImageFormatListCreateInfo &imageFormatListCreateInfo,
+     VkImageUsageFlags usageFlags,
+-    VkImageCreateFlags createFlags,
++    VkImageCreateFlags &createFlags,
+     VkImageFormatProperties2 *outImageFormatProperties)
+ {
+     if (!IsFormatSupported(renderer, format, drmModifier, usageFlags, createFlags,
+                            imageFormatListCreateInfo, outImageFormatProperties))
+     {
+-        usageFlags &= ~kRenderAndInputUsage;
++        createFlags &= ~VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
++        // When mutable format bit is not set, viewFormatCount must be 0 or 1.
++        imageFormatListCreateInfo.viewFormatCount =
++            std::min(imageFormatListCreateInfo.viewFormatCount, 1u);
+         if (!IsFormatSupported(renderer, format, drmModifier, usageFlags, createFlags,
+                                imageFormatListCreateInfo, outImageFormatProperties))
+         {
+-            usageFlags &= ~kTextureUsage;
++            usageFlags &= ~kRenderAndInputUsage;
+             if (!IsFormatSupported(renderer, format, drmModifier, usageFlags, createFlags,
+                                    imageFormatListCreateInfo, outImageFormatProperties))
+             {
+-                // Can not find supported usage flags for this image.
+-                return 0;
++                usageFlags &= ~kTextureUsage;
++                if (!IsFormatSupported(renderer, format, drmModifier, usageFlags, createFlags,
++                                       imageFormatListCreateInfo, outImageFormatProperties))
++                {
++                    // Can not find supported usage flags for this image.
++                    return 0;
++                }
+             }
+         }
+     }
+@@ -389,9 +397,9 @@ VkImageUsageFlags FindSupportedUsageFlagsForFormat(
+ bool FindSupportedFlagsForFormat(vk::Renderer *renderer,
+                                  VkFormat format,
+                                  uint64_t drmModifier,
+-                                 VkImageFormatListCreateInfo imageFormatListCreateInfo,
++                                 VkImageFormatListCreateInfo &imageFormatListCreateInfo,
+                                  VkImageUsageFlags *outUsageFlags,
+-                                 VkImageCreateFlags createFlags,
++                                 VkImageCreateFlags &createFlags,
+                                  VkImageFormatProperties2 *outImageFormatProperties)
+ {
+     *outUsageFlags =
+@@ -403,7 +411,6 @@ bool FindSupportedFlagsForFormat(vk::Renderer *renderer,
+ angle::Result DmaBufImageSiblingVkLinux::initWithFormat(DisplayVk *displayVk,
+                                                         const angle::Format &format,
+                                                         VkFormat vulkanFormat,
+-                                                        MutableFormat mutableFormat,
+                                                         InitResult *initResultOut)
+ {
+     *initResultOut         = InitResult::Success;
+@@ -478,11 +485,6 @@ angle::Result DmaBufImageSiblingVkLinux::initWithFormat(DisplayVk *displayVk,
+         ((usageFlags & VK_IMAGE_USAGE_STORAGE_BIT) == 0)
+             ? vk::ImageFormatReinterpretability::ColorspaceOverrides
+             : vk::ImageFormatReinterpretability::Full;
+-    if (mutableFormat == MutableFormat::NotAllowed)
+-    {
+-        createFlags &= ~VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+-        formatReinterpretability = vk::ImageFormatReinterpretability::None;
+-    }
+ 
+     VkImageFormatListCreateInfoKHR imageFormatListCreateInfo;
+     vk::ImageHelper::ImageFormats imageFormats;
+@@ -591,18 +593,7 @@ angle::Result DmaBufImageSiblingVkLinux::initImpl(DisplayVk *displayVk)
+ 
+     for (VkFormat vkFmt : mVkFormats)
+     {
+-        // Try all formats with mutable format bit first
+-        ANGLE_TRY(initWithFormat(displayVk, format, vkFmt, MutableFormat::Allowed, &initResult));
+-        if (initResult == InitResult::Success)
+-        {
+-            return angle::Result::Continue;
+-        }
+-    }
+-
+-    for (VkFormat vkFmt : mVkFormats)
+-    {
+-        // Then try without mutable format bit
+-        ANGLE_TRY(initWithFormat(displayVk, format, vkFmt, MutableFormat::NotAllowed, &initResult));
++        ANGLE_TRY(initWithFormat(displayVk, format, vkFmt, &initResult));
+         if (initResult == InitResult::Success)
+         {
+             return angle::Result::Continue;
+diff --git a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.h b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.h
+index 3b350043f77f45c463bc5b637b1f5f3437b49cc8..490202fc7a1bed3c1ae1b8973f2407659c0dee1d 100644
+--- a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.h
++++ b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.h
+@@ -15,12 +15,6 @@
+ namespace rx
+ {
+ 
+-enum MutableFormat
+-{
+-    Allowed,
+-    NotAllowed
+-};
+-
+ enum InitResult
+ {
+     Success,
+@@ -54,7 +48,6 @@ class DmaBufImageSiblingVkLinux : public ExternalImageSiblingVk
+     angle::Result initWithFormat(DisplayVk *displayVk,
+                                  const angle::Format &format,
+                                  VkFormat vulkanFormat,
+-                                 MutableFormat mutableFormat,
+                                  InitResult *outResult);
+ 
+     angle::Result initImpl(DisplayVk *displayVk);

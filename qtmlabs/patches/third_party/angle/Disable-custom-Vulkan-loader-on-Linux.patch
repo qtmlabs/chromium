@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Tue, 17 Jun 2025 10:42:46 +0700
+Subject: Disable custom Vulkan loader on Linux
+
+
+diff --git a/src/common/vulkan/BUILD.gn b/src/common/vulkan/BUILD.gn
+index aaf43796a44302744954eebae99dfa30bf254cc5..76d50099bd549b12898cbb1d6adff3376616cd06 100644
+--- a/src/common/vulkan/BUILD.gn
++++ b/src/common/vulkan/BUILD.gn
+@@ -10,7 +10,7 @@ if (angle_use_wayland) {
+ }
+ 
+ declare_args() {
+-  angle_use_custom_libvulkan = !is_android && !is_fuchsia
++  angle_use_custom_libvulkan = !is_android && !is_fuchsia && !is_linux
+ 
+   # On real CrOS devices, we should use the system Vulkan loader. On the
+   # ChromeOS-for-Linux build, we should use the built libvulkan because the
+diff --git a/src/common/vulkan/libvulkan_loader.cpp b/src/common/vulkan/libvulkan_loader.cpp
+index 446c545a22caa5b7c97776791f678b18b0eb31a8..b907a722a04c702956f4404bf3aaf506800392c2 100644
+--- a/src/common/vulkan/libvulkan_loader.cpp
++++ b/src/common/vulkan/libvulkan_loader.cpp
+@@ -33,7 +33,7 @@ void *OpenLibVulkan()
+     };
+ 
+     constexpr SearchType kSearchTypes[] = {
+-// On Android and Fuchsia we use the system libvulkan.
++// On Linux, Android and Fuchsia we use the system libvulkan.
+ #if defined(ANGLE_USE_CUSTOM_LIBVULKAN)
+         SearchType::ModuleDir,
+ #else
