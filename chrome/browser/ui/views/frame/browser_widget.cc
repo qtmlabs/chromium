@@ -87,11 +87,7 @@ class ThemeChangedObserver : public views::WidgetObserver {
 };
 
 bool IsUsingLinuxSystemTheme(Profile* profile) {
-#if BUILDFLAG(IS_LINUX)
-  return ThemeServiceFactory::GetForProfile(profile)->UsingSystemTheme();
-#else
   return false;
-#endif
 }
 
 ui::ColorProviderKey::SchemeVariant GetSchemeVariant(
