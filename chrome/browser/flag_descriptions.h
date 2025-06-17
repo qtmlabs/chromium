@@ -8623,6 +8623,12 @@ inline constexpr char kHandleMdmErrorsForDasherAccountsName[] =
 inline constexpr char kHandleMdmErrorsForDasherAccountsDescription[] =
     "Enables the mdm error handling feature for dasher accounts";
 
+inline constexpr char kVulkanForceYCbCrLinearSamplingName[] =
+    "Vulkan: Force linear sampling for YUV";
+inline constexpr char kVulkanForceYCbCrLinearSamplingDescription[] =
+    "Force usage of YUV linear sampling on Vulkan even if it's not reported"
+    " as supported by the graphics driver";
+
 // ============================================================================
 // Don't just add flags to the end, put them in the alphabetical order.
 // ============================================================================
