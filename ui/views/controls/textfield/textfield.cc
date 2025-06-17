@@ -1255,7 +1255,17 @@ void Textfield::WriteTextToClipboard(ui::ClipboardBuffer clipboard_buffer,
                                      const std::u16string_view& text) {
   if (!controller_ ||
       !controller_->HandleWriteTextToClipboard(clipboard_buffer, text)) {
-    ui::ScopedClipboardWriter(clipboard_buffer).WriteText(text);
+    std::u16string selected_text(text);
+    if (controller_) {
+      controller_->AdjustTextForCutOrCopy(selected_text);
+    }
+    ui::ScopedClipboardWriter scoped_clipboard_writer(clipboard_buffer);
+    scoped_clipboard_writer.WriteText(selected_text);
+    if (controller_ && controller_->ShouldMarkAsOffTheRecord()) {
+      // Data is copied from an incognito window, so mark it as off the
+      // record.
+      scoped_clipboard_writer.MarkAsOffTheRecord();
+    }
   }
 }
 

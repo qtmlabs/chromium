@@ -47,4 +47,8 @@ bool TextfieldController::AllowStartDragEvent(const std::u16string_view&) {
   return true;
 }
 
+bool TextfieldController::ShouldMarkAsOffTheRecord() {
+  return false;
+}
+
 }  // namespace views

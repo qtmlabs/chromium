@@ -103,6 +103,12 @@ class VIEWS_EXPORT TextfieldController {
   // Returns whether textfield content can be dragged, to drop elsewhere.
   virtual bool AllowStartDragEvent(const std::u16string_view& selected_text);
 
+  // Allow the controller to change what's actually written to the clipboard.
+  virtual void AdjustTextForCutOrCopy(std::u16string& selected_text) {}
+
+  // Data is copied from an incognito window.
+  virtual bool ShouldMarkAsOffTheRecord();
+
  protected:
   virtual ~TextfieldController() = default;
 };
