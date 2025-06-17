@@ -148,8 +148,9 @@ def main():
     inst.prep_staging_common()
     (staging_dir / "DEBIAN").mkdir(parents=True, exist_ok=True)
     (staging_dir / "DEBIAN").chmod(0o755)
-    (staging_dir / "etc/cron.daily").mkdir(parents=True, exist_ok=True)
-    (staging_dir / "etc/cron.daily").chmod(0o755)
+    if args.branding == "google_chrome":
+        (staging_dir / "etc/cron.daily").mkdir(parents=True, exist_ok=True)
+        (staging_dir / "etc/cron.daily").chmod(0o755)
     (staging_dir /
      f"usr/share/doc/{inst.context['USR_BIN_SYMLINK_NAME']}").mkdir(
          parents=True, exist_ok=True)
@@ -160,23 +161,25 @@ def main():
 
     logging.info(f"Staging Debian install files in '{staging_dir}'...")
     install_dir = staging_dir / inst.context["INSTALLDIR"].lstrip("/")
-    cron_dir = install_dir / "cron"
-    cron_dir.mkdir(parents=True, exist_ok=True)
-    cron_dir.chmod(0o755)
+    if args.branding == "google_chrome":
+        cron_dir = install_dir / "cron"
+        cron_dir.mkdir(parents=True, exist_ok=True)
+        cron_dir.chmod(0o755)
 
-    cron_file = cron_dir / inst.context["PACKAGE"]
-    installer.process_template(output_dir / "installer/common/repo.cron",
-                               cron_file, inst.context)
-    cron_file.chmod(0o755)
+        cron_file = cron_dir / inst.context["PACKAGE"]
+        installer.process_template(output_dir / "installer/common/repo.cron",
+                                   cron_file, inst.context)
+        cron_file.chmod(0o755)
 
-    cron_daily_link = staging_dir / "etc/cron.daily" / inst.context["PACKAGE"]
-    if cron_daily_link.is_symlink() or cron_daily_link.exists():
-        cron_daily_link.unlink()
-    os.symlink(
-        os.path.join(inst.context["INSTALLDIR"], "cron",
-                     inst.context["PACKAGE"]),
-        cron_daily_link,
-    )
+        cron_daily_link = staging_dir / "etc/cron.daily" / inst.context[
+            "PACKAGE"]
+        if cron_daily_link.is_symlink() or cron_daily_link.exists():
+            cron_daily_link.unlink()
+        os.symlink(
+            os.path.join(inst.context["INSTALLDIR"], "cron",
+                         inst.context["PACKAGE"]),
+            cron_daily_link,
+        )
 
     for script in ["postinst", "prerm", "postrm"]:
         dest = staging_dir / "DEBIAN" / script

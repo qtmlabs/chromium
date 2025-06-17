@@ -58,13 +58,16 @@ if [ -z "@@INSTALLDIR@@" -o ! -d "@@STAGEDIR@@/@@INSTALLDIR@@" ] ; then
 fi
 
 install -m 755 -d \
-  "$RPM_BUILD_ROOT/etc" \
   "$RPM_BUILD_ROOT/opt" \
   "$RPM_BUILD_ROOT/usr"
 # This is hard coded for now
-cp -a "@@STAGEDIR@@/etc/" "$RPM_BUILD_ROOT/"
 cp -a "@@STAGEDIR@@/opt/" "$RPM_BUILD_ROOT/"
 cp -a "@@STAGEDIR@@/usr/" "$RPM_BUILD_ROOT/"
+
+%if "@@BRANDING@@" == "google_chrome"
+install -m 755 -d "$RPM_BUILD_ROOT/etc"
+cp -a "@@STAGEDIR@@/etc/" "$RPM_BUILD_ROOT/"
+%endif
 
 #------------------------------------------------------------------------------
 #   Rule to clean up a build
@@ -85,7 +88,10 @@ rm -rf "$RPM_BUILD_ROOT"
 
 # Be explicit about the files we scatter throughout the system we don't
 # accidentally "own" stuff that's not ours (crbug.com/123990).
+%if "@@BRANDING@@" == "google_chrome"
 /etc/cron.daily/@@PACKAGE@@
+%endif
+
 %ghost %attr(755,root,root) /usr/bin/@@PACKAGE_ORIG@@
 /usr/bin/@@USR_BIN_SYMLINK_NAME@@
 /usr/share/appdata/@@PACKAGE@@.appdata.xml
@@ -125,6 +131,7 @@ add_nss_symlinks
 
 remove_udev_symlinks
 
+%if "@@BRANDING@@" == "google_chrome"
 if [ ! -e "$DEFAULTS_FILE" ]; then
   echo 'repo_add_once="true"' > "$DEFAULTS_FILE"
 fi
@@ -146,6 +153,7 @@ if [ "$repo_add_once" = "true" ]; then
     esac
   done
 fi
+%endif
 
 CHANNEL=@@CHANNEL@@
 case $CHANNEL in

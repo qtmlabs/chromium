@@ -136,19 +136,21 @@ def main():
     inst.context["SHLIB_PERMS"] = 0o755
 
     inst.prep_staging_common()
-    (staging_dir / "etc/cron.daily").mkdir(parents=True, exist_ok=True)
-    (staging_dir / "etc/cron.daily").chmod(0o755)
+    if args.branding == "google_chrome":
+        (staging_dir / "etc/cron.daily").mkdir(parents=True, exist_ok=True)
+        (staging_dir / "etc/cron.daily").chmod(0o755)
 
     inst.stage_install_common()
 
     logging.info(f"Staging RPM install files in '{staging_dir}'...")
-    cron_file = staging_dir / "etc/cron.daily" / inst.context["PACKAGE"]
-    installer.process_template(
-        output_dir / "installer/common/rpmrepo.cron",
-        cron_file,
-        inst.context,
-    )
-    cron_file.chmod(0o755)
+    if args.branding == "google_chrome":
+        cron_file = staging_dir / "etc/cron.daily" / inst.context["PACKAGE"]
+        installer.process_template(
+            output_dir / "installer/common/rpmrepo.cron",
+            cron_file,
+            inst.context,
+        )
+        cron_file.chmod(0o755)
 
     # do_package logic
     logging.info(f"Packaging {args.arch}...")
