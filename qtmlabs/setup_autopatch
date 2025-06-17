@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tree="$1"
+
+cd "$tree"
+
+echo "Setting up $tree for patching..."
+
+if [ -f .qtmlabs_base_marker ]; then
+	base_rev="$(git rev-list -1 HEAD .qtmlabs_base_marker)^"
+	git reset --hard "$base_rev" >/dev/null
+fi
+touch .qtmlabs_base_marker
+git add .qtmlabs_base_marker
+git commit -m '[qtmlabs autopatcher] install metadata' >/dev/null

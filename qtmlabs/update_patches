@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tree="$1"
+
+if ! [ -f "$tree/.qtmlabs_base_marker" ]; then
+	echo "$tree not properly setup, run gclient sync && qtmlabs/setup_autopatch $tree"
+	exit 1
+fi
+
+patches_begin=$(git -C "$tree" rev-list -1 HEAD .qtmlabs_base_marker)
+
+mkdir -p qtmlabs/patches/"$tree"
+rm -rf qtmlabs/patches/"$tree"/*.patch
+rm -rf qtmlabs/patches/"$tree"/MANIFEST
+
+git -C "$tree" format-patch \
+	--keep-subject \
+	--no-stat \
+	--no-signature \
+	--zero-commit \
+	--full-index \
+	--no-numbered \
+	--output-directory "$PWD/qtmlabs/patches/$tree" \
+	"$patches_begin"..
+
+cd qtmlabs/patches/"$tree"
+
+for patch in $(ls *.patch | sort); do
+	new_patch="$(echo "$patch" | sed -E "s,^[0-9]+-,,")"
+	mv "$patch" "$new_patch"
+	echo "$new_patch" >>MANIFEST
+done
