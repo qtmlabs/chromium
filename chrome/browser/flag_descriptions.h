@@ -5210,6 +5210,11 @@ extern const char kEnterpriseFileObfuscationName[];
 extern const char kEnterpriseFileObfuscationDescription[];
 #endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
 
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+extern const char kVulkanForceYCbCrLinearSamplingName[];
+extern const char kVulkanForceYCbCrLinearSamplingDescription[];
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order. See top instructions for more.
