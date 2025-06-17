@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+upstream="${1:-"@{u}"}"
+
+upstream_base="$(git merge-base HEAD "$upstream")"
+
+pathspec_exclude=(
+	:!/qtmlabs
+
+	:!/DEPS
+	:!/.gitmodules
+
+	# not present in official tarballs
+	:!/chrome/test
+)
+
+pathspec_include=(
+	qtmlabs/util/sdt
+)
+
+if [ -f qtmlabs/superdiff_config_internal ]; then
+	source qtmlabs/superdiff_config_internal
+fi
+
+git --no-pager diff --full-index "$upstream_base" HEAD -- "${pathspec_exclude[@]}"
+git --no-pager diff --full-index "$upstream_base" HEAD -- "${pathspec_include[@]}"
+
+for manifest in $(find qtmlabs/patches -name MANIFEST | sort); do
+	patched_dir="$(dirname "$manifest" | sed 's,^qtmlabs/patches/,,')"
+	pushd "$patched_dir" >/dev/null
+	base_rev="$(git rev-list -1 HEAD -- .qtmlabs_base_marker)"
+	git --no-pager diff --full-index --src-prefix="a/$patched_dir/" --dst-prefix="b/$patched_dir/" "$base_rev" HEAD
+	popd >/dev/null
+done
