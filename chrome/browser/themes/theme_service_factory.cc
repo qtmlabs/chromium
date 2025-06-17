@@ -109,10 +109,6 @@ ThemeServiceFactory::BuildServiceInstanceForBrowserContext(
 
 void ThemeServiceFactory::RegisterProfilePrefs(
     user_prefs::PrefRegistrySyncable* registry) {
-#if BUILDFLAG(IS_LINUX)
-  registry->RegisterIntegerPref(prefs::kSystemTheme,
-                                static_cast<int>(ui::GetDefaultSystemTheme()));
-#endif
   registry->RegisterFilePathPref(prefs::kCurrentThemePackFilename,
                                  base::FilePath());
   registry->RegisterStringPref(prefs::kCurrentThemeID,
