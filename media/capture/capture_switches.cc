@@ -50,7 +50,7 @@ BASE_FEATURE(kTabCaptureInfobarLinks, base::FEATURE_ENABLED_BY_DEFAULT);
 #if defined(WEBRTC_USE_PIPEWIRE)
 // Controls whether the PipeWire support for cameras is enabled on the
 // Wayland display server.
-BASE_FEATURE(kWebRtcPipeWireCamera, base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE(kWebRtcPipeWireCamera, base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // defined(WEBRTC_USE_PIPEWIRE)
 
 #if BUILDFLAG(IS_WIN)
