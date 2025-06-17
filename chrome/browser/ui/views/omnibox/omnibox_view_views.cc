@@ -1935,15 +1935,6 @@ void OmniboxViewViews::OnAfterUserAction(views::Textfield* sender) {
 
 void OmniboxViewViews::OnAfterCutOrCopy(ui::ClipboardBuffer clipboard_buffer) {
   const base::TimeTicks now(base::TimeTicks::Now());
-  const ui::Clipboard* cb = ui::Clipboard::GetForCurrentThread();
-  std::u16string selected_text;
-  ui::DataTransferEndpoint data_dst = ui::DataTransferEndpoint(
-      ui::EndpointType::kDefault, {.notify_if_restricted = false});
-  cb->ReadText(clipboard_buffer, &data_dst, &selected_text);
-  GURL url;
-  bool write_url = false;
-  model()->AdjustTextForCopy(GetSelectedRange().GetMin(), &selected_text, &url,
-                             &write_url);
   if (IsSelectAll()) {
     UMA_HISTOGRAM_COUNTS_1M(OmniboxEditModel::kCutOrCopyAllTextHistogram, 1);
 
@@ -1966,16 +1957,6 @@ void OmniboxViewViews::OnAfterCutOrCopy(ui::ClipboardBuffer clipboard_buffer) {
       }
     }
   }
-
-  ui::ScopedClipboardWriter scoped_clipboard_writer(clipboard_buffer);
-  scoped_clipboard_writer.WriteText(selected_text);
-  if (!ShouldDoLearning()) {
-    // Data is copied from an incognito window, so mark it as off the record.
-    scoped_clipboard_writer.MarkAsOffTheRecord();
-  }
-
-  // Regardless of |write_url|, don't write a hyperlink to the clipboard.
-  // Plaintext URLs are simply handled more consistently than hyperlinks.
 }
 
 void OmniboxViewViews::OnWriteDragData(ui::OSExchangeData* data) {
@@ -2069,6 +2050,17 @@ void OmniboxViewViews::UpdateContextMenu(ui::SimpleMenuModel* menu_contents) {
     menu_contents->AddCheckItemWithStringId(IDC_SHOW_SEARCH_TOOLS,
                                             IDS_CONTEXT_MENU_SHOW_SEARCH_TOOLS);
   }
+}
+
+void OmniboxViewViews::AdjustTextForCutOrCopy(std::u16string& selected_text) {
+  GURL url;
+  bool write_url = false;
+  model()->AdjustTextForCopy(GetSelectedRange().GetMin(), &selected_text, &url,
+                             &write_url);
+}
+
+bool OmniboxViewViews::ShouldMarkAsOffTheRecord() {
+  return !ShouldDoLearning();
 }
 
 bool OmniboxViewViews::IsCommandIdChecked(int id) const {

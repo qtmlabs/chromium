@@ -397,6 +397,10 @@ void SelectRangeInCompositionText(gfx::RenderText* render_text,
 /////////////////////////////////////////////////////////////////
 // TextfieldModel: public
 
+bool TextfieldModel::Delegate::ShouldMarkAsOffTheRecord() {
+  return false;
+}
+
 TextfieldModel::Delegate::~Delegate() = default;
 
 TextfieldModel::TextfieldModel(Delegate* delegate)
@@ -642,8 +646,17 @@ bool TextfieldModel::Redo() {
 bool TextfieldModel::Cut() {
   if (!HasCompositionText() && HasSelection(true) &&
       !render_text_->obscured()) {
-    ui::ScopedClipboardWriter(ui::ClipboardBuffer::kCopyPaste)
-        .WriteText(GetSelectedText());
+    std::u16string selected_text(GetSelectedText());
+    if (delegate_) {
+      delegate_->AdjustTextForCutOrCopy(selected_text);
+    }
+    ui::ScopedClipboardWriter scoped_clipboard_writer(
+        ui::ClipboardBuffer::kCopyPaste);
+    scoped_clipboard_writer.WriteText(selected_text);
+    if (delegate_ && delegate_->ShouldMarkAsOffTheRecord()) {
+      // Data is copied from an incognito window, so mark it as off the record.
+      scoped_clipboard_writer.MarkAsOffTheRecord();
+    }
     DeleteSelection();
     return true;
   }
@@ -653,8 +666,17 @@ bool TextfieldModel::Cut() {
 bool TextfieldModel::Copy() {
   if (!HasCompositionText() && HasSelection(true) &&
       !render_text_->obscured()) {
-    ui::ScopedClipboardWriter(ui::ClipboardBuffer::kCopyPaste)
-        .WriteText(GetSelectedText());
+    std::u16string selected_text(GetSelectedText());
+    if (delegate_) {
+      delegate_->AdjustTextForCutOrCopy(selected_text);
+    }
+    ui::ScopedClipboardWriter scoped_clipboard_writer(
+        ui::ClipboardBuffer::kCopyPaste);
+    scoped_clipboard_writer.WriteText(selected_text);
+    if (delegate_ && delegate_->ShouldMarkAsOffTheRecord()) {
+      // Data is copied from an incognito window, so mark it as off the record.
+      scoped_clipboard_writer.MarkAsOffTheRecord();
+    }
     return true;
   }
   return false;

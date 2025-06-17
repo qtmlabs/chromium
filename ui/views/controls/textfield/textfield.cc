@@ -1247,6 +1247,19 @@ void Textfield::OnTextChanged() {
   drop_weak_ptr_factory_.InvalidateWeakPtrs();
 }
 
+void Textfield::AdjustTextForCutOrCopy(std::u16string& selected_text) {
+  if (controller_) {
+    controller_->AdjustTextForCutOrCopy(selected_text);
+  }
+}
+
+bool Textfield::ShouldMarkAsOffTheRecord() {
+  if (controller_) {
+    return controller_->ShouldMarkAsOffTheRecord();
+  }
+  return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Textfield, ContextMenuController overrides:
 
@@ -2687,8 +2700,20 @@ void Textfield::UpdateSelectionClipboard() {
   if (ui::Clipboard::IsSupportedClipboardBuffer(
           ui::ClipboardBuffer::kSelection)) {
     if (text_input_type_ != ui::TEXT_INPUT_TYPE_PASSWORD) {
-      ui::ScopedClipboardWriter(ui::ClipboardBuffer::kSelection)
-          .WriteText(GetSelectedText());
+      {
+        std::u16string selected_text(GetSelectedText());
+        if (controller_) {
+          controller_->AdjustTextForCutOrCopy(selected_text);
+        }
+        ui::ScopedClipboardWriter scoped_clipboard_writer(
+            ui::ClipboardBuffer::kSelection);
+        scoped_clipboard_writer.WriteText(selected_text);
+        if (controller_ && controller_->ShouldMarkAsOffTheRecord()) {
+          // Data is copied from an incognito window, so mark it as off the
+          // record.
+          scoped_clipboard_writer.MarkAsOffTheRecord();
+        }
+      }
       if (controller_) {
         controller_->OnAfterCutOrCopy(ui::ClipboardBuffer::kSelection);
       }
