@@ -368,8 +368,11 @@ intptr_t SIGSYSSchedHandler(const struct arch_seccomp_data& args,
                              static_cast<intptr_t>(args.args[3]),
                              static_cast<intptr_t>(args.args[4]),
                              static_cast<intptr_t>(args.args[5]));
+      } else {
+        // Mesa will try to use sched_setscheduler on its worker threads from
+        // the main thread. Nothing we can do about it, so return -EPERM.
+        return -EPERM;
       }
-      break;
   }
 
   CrashSIGSYS_Handler(args, aux);

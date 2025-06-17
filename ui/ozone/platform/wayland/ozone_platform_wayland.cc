@@ -364,6 +364,10 @@ class OzonePlatformWayland : public OzonePlatform,
       // compositing on different GPUs.
       properties->webgpu_on_vulkan_via_gl_interop = true;
 
+      // The GPU process on Ozone/Wayland does not need to connect to a display
+      // server to function, so enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
+
       initialised = true;
     }
 

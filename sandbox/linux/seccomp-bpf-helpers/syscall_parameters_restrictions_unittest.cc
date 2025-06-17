@@ -220,13 +220,11 @@ BPF_TEST_C(ParameterRestrictions,
   getparam_thread.Stop();
 }
 
-BPF_DEATH_TEST_C(ParameterRestrictions,
-                 sched_getparam_crash_non_zero,
-                 DEATH_SEGV_MESSAGE(sandbox::GetErrorMessageContentForTests()),
-                 RestrictSchedPolicy) {
+BPF_TEST_C(ParameterRestrictions, sched_getparam_denied, RestrictSchedPolicy) {
   const pid_t kInitPID = 1;
   struct sched_param param;
   sched_getparam(kInitPID, &param);
+  BPF_ASSERT_EQ(EPERM, errno);
 }
 
 class RestrictPrlimit64Policy : public bpf_dsl::Policy {
