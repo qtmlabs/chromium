@@ -1,0 +1,584 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Tue, 17 Jun 2025 10:42:46 +0700
+Subject: Implement EGL_ANGLE_platform_angle_device_id on Linux
+
+This allows the Chromium Ozone/Wayland backend to specify the specific
+device that should be used for the EGL surfaceless display. This is
+useful for ensuring that ANGLE use the same underlying GPU as the GBM
+device for OzoneImageBacking to avoid accidental cross-device resource
+sharing.
+
+diff --git a/src/common/vulkan/vulkan_icd.cpp b/src/common/vulkan/vulkan_icd.cpp
+index bad3e01ba8a3a18b1b8434992008d4236cac9b5f..053f0a34e7968122c90392648fcf8c4bc1ef16b7 100644
+--- a/src/common/vulkan/vulkan_icd.cpp
++++ b/src/common/vulkan/vulkan_icd.cpp
+@@ -18,8 +18,13 @@
+ #include "common/Optional.h"
+ #include "common/bitset_utils.h"
+ #include "common/debug.h"
++#include "common/platform.h"
+ #include "common/system_utils.h"
+ 
++#if defined(ANGLE_PLATFORM_LINUX)
++#    include <sys/sysmacros.h>
++#endif
++
+ namespace
+ {
+ void ResetEnvironmentVar(const char *variableName, const Optional<std::string> &value)
+@@ -105,6 +110,24 @@ ICDFilterFunc GetFilterForICD(vk::ICD preferredICD)
+     }
+ }
+ 
++void GetPhysicalDeviceProperties2Wrapper(
++    PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
++    PFN_vkGetPhysicalDeviceProperties2KHR pGetPhysicalDeviceProperties2KHR,
++    VkPhysicalDevice physicalDevice,
++    VkPhysicalDeviceProperties2KHR *physicalDeviceProperties2Out)
++{
++    if (pGetPhysicalDeviceProperties2KHR)
++    {
++        pGetPhysicalDeviceProperties2KHR(physicalDevice, physicalDeviceProperties2Out);
++    }
++    else
++    {
++        ASSERT(pGetPhysicalDeviceProperties);
++        ASSERT(physicalDeviceProperties2Out->pNext == nullptr);
++        pGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties2Out->properties);
++    }
++}
++
+ }  // namespace
+ 
+ // If we're loading the vulkan layers, we could be running from any random directory.
+@@ -222,23 +245,68 @@ bool ScopedVkLoaderEnvironment::setICDEnvironment(const char *icd)
+     return mChangedICDEnv;
+ }
+ 
+-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
+-                          const std::vector<VkPhysicalDevice> &physicalDevices,
+-                          vk::ICD preferredICD,
+-                          uint32_t preferredVendorID,
+-                          uint32_t preferredDeviceID,
+-                          VkPhysicalDevice *physicalDeviceOut,
+-                          VkPhysicalDeviceProperties *physicalDevicePropertiesOut)
++#define vkGetPhysicalDeviceProperties2KHR(physicalDevice, physicalDevicePropertiesOut)      \
++    GetPhysicalDeviceProperties2Wrapper(pGetPhysicalDeviceProperties,                       \
++                                        pGetPhysicalDeviceProperties2KHR, (physicalDevice), \
++                                        (physicalDevicePropertiesOut))
++
++void ChoosePhysicalDevice(
++    PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
++    PFN_vkGetPhysicalDeviceProperties2KHR pGetPhysicalDeviceProperties2KHR,
++    PFN_vkEnumerateDeviceExtensionProperties pEnumerateDeviceExtensionProperties,
++    const std::vector<VkPhysicalDevice> &physicalDevices,
++    vk::ICD preferredICD,
++    uint64_t systemDeviceID,
++    VkPhysicalDevice *physicalDeviceOut,
++    VkPhysicalDeviceProperties *physicalDevicePropertiesOut)
+ {
+     ASSERT(!physicalDevices.empty());
+ 
+     ICDFilterFunc filter = GetFilterForICD(preferredICD);
+ 
+-    const bool shouldChooseByID = (preferredVendorID != 0 || preferredDeviceID != 0);
++    const bool shouldChooseByID = (systemDeviceID != 0);
+ 
+     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
+     {
+-        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
++        VkPhysicalDeviceProperties2KHR physicalDeviceProperties2;
++        physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
++        physicalDeviceProperties2.pNext = nullptr;
++
++#if defined(ANGLE_PLATFORM_LINUX)
++        VkPhysicalDeviceDrmPropertiesEXT drmProperties;
++        if (shouldChooseByID)
++        {
++            uint32_t extensionCount;
++            VkResult result = pEnumerateDeviceExtensionProperties(physicalDevice, nullptr,
++                                                                  &extensionCount, nullptr);
++            ASSERT(result == VK_SUCCESS);
++            std::vector<VkExtensionProperties> extensionProperties(extensionCount);
++            result = pEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount,
++                                                         extensionProperties.data());
++            ASSERT(result == VK_SUCCESS);
++            bool isPhysicalDeviceDrmAvailable = false;
++            for (const auto &extension : extensionProperties)
++            {
++                if (strcmp(extension.extensionName, VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME) == 0)
++                {
++                    isPhysicalDeviceDrmAvailable = true;
++                    break;
++                }
++            }
++            if (isPhysicalDeviceDrmAvailable && pGetPhysicalDeviceProperties2KHR)
++            {
++                drmProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT;
++                drmProperties.pNext = nullptr;
++                physicalDeviceProperties2.pNext = &drmProperties;
++            }
++            else
++            {
++                continue;
++            }
++        }
++#endif
++        vkGetPhysicalDeviceProperties2KHR(physicalDevice, &physicalDeviceProperties2);
++        *physicalDevicePropertiesOut = physicalDeviceProperties2.properties;
+ 
+         if (physicalDevicePropertiesOut->apiVersion < kMinimumVulkanAPIVersion)
+         {
+@@ -255,28 +323,16 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDevicePr
+ 
+         if (shouldChooseByID)
+         {
+-            // NOTE: If the system has multiple GPUs with the same vendor and
+-            // device IDs, this will arbitrarily select one of them.
+-            bool matchVendorID = true;
+-            bool matchDeviceID = true;
+-
+-            if (preferredVendorID != 0 &&
+-                preferredVendorID != physicalDevicePropertiesOut->vendorID)
+-            {
+-                matchVendorID = false;
+-            }
+-
+-            if (preferredDeviceID != 0 &&
+-                preferredDeviceID != physicalDevicePropertiesOut->deviceID)
+-            {
+-                matchDeviceID = false;
+-            }
+-
+-            if (matchVendorID && matchDeviceID)
++#if defined(ANGLE_PLATFORM_LINUX)
++            dev_t drmRenderNodeDeviceId = static_cast<dev_t>(systemDeviceID);
++            if (drmProperties.hasRender == VK_TRUE &&
++                drmProperties.renderMajor == major(drmRenderNodeDeviceId) &&
++                drmProperties.renderMinor == minor(drmRenderNodeDeviceId))
+             {
+                 *physicalDeviceOut = physicalDevice;
+                 return;
+             }
++#endif
+         }
+     }
+ 
+@@ -284,7 +340,11 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDevicePr
+     VkPhysicalDeviceProperties integratedDeviceProperties;
+     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
+     {
+-        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
++        VkPhysicalDeviceProperties2KHR physicalDeviceProperties2;
++        physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
++        physicalDeviceProperties2.pNext = nullptr;
++        vkGetPhysicalDeviceProperties2KHR(physicalDevice, &physicalDeviceProperties2);
++        *physicalDevicePropertiesOut = physicalDeviceProperties2.properties;
+ 
+         if (physicalDevicePropertiesOut->apiVersion < kMinimumVulkanAPIVersion)
+         {
+@@ -319,9 +379,15 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDevicePr
+     WARN() << "Preferred device ICD not found. Using default physicalDevice instead.";
+     // Fallback to the first device.
+     *physicalDeviceOut = physicalDevices[0];
+-    pGetPhysicalDeviceProperties(*physicalDeviceOut, physicalDevicePropertiesOut);
++    VkPhysicalDeviceProperties2KHR physicalDeviceProperties2;
++    physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
++    physicalDeviceProperties2.pNext = nullptr;
++    vkGetPhysicalDeviceProperties2KHR(*physicalDeviceOut, &physicalDeviceProperties2);
++    *physicalDevicePropertiesOut = physicalDeviceProperties2.properties;
+ }
+ 
++#undef vkGetPhysicalDeviceProperties2KHR
++
+ }  // namespace vk
+ 
+ }  // namespace angle
+diff --git a/src/common/vulkan/vulkan_icd.h b/src/common/vulkan/vulkan_icd.h
+index d887e15efa82acde28823a4609eff2f5f29e8157..715ee17a8d64a6d8acadfa353efc2c5b093b28b0 100644
+--- a/src/common/vulkan/vulkan_icd.h
++++ b/src/common/vulkan/vulkan_icd.h
+@@ -61,13 +61,15 @@ class [[nodiscard]] ScopedVkLoaderEnvironment : angle::NonCopyable
+     Optional<std::string> mPreviousNoDeviceSelectEnv;
+ };
+ 
+-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
+-                          const std::vector<VkPhysicalDevice> &physicalDevices,
+-                          vk::ICD preferredICD,
+-                          uint32_t preferredVendorID,
+-                          uint32_t preferredDeviceID,
+-                          VkPhysicalDevice *physicalDeviceOut,
+-                          VkPhysicalDeviceProperties *physicalDevicePropertiesOut);
++void ChoosePhysicalDevice(
++    PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
++    PFN_vkGetPhysicalDeviceProperties2KHR pGetPhysicalDeviceProperties2KHR,
++    PFN_vkEnumerateDeviceExtensionProperties pEnumerateDeviceExtensionProperties,
++    const std::vector<VkPhysicalDevice> &physicalDevices,
++    vk::ICD preferredICD,
++    uint64_t systemDeviceID,
++    VkPhysicalDevice *physicalDeviceOut,
++    VkPhysicalDeviceProperties *physicalDevicePropertiesOut);
+ 
+ }  // namespace vk
+ 
+diff --git a/src/libANGLE/Display.cpp b/src/libANGLE/Display.cpp
+index 14ea46bd8c9396599b57476c32fe4a043f2371bd..16ffa3a3d7c3445853d8634b00ec836d964a7161 100644
+--- a/src/libANGLE/Display.cpp
++++ b/src/libANGLE/Display.cpp
+@@ -2212,8 +2212,7 @@ static ClientExtensions GenerateClientExtensions()
+ #endif
+ 
+ #if defined(ANGLE_ENABLE_VULKAN)
+-    extensions.platformANGLEVulkan   = true;
+-    extensions.platformANGLEDeviceId = true;
++    extensions.platformANGLEVulkan = true;
+ #endif
+ 
+ #if defined(ANGLE_ENABLE_SWIFTSHADER)
+@@ -2241,6 +2240,10 @@ static ClientExtensions GenerateClientExtensions()
+     extensions.displayPowerPreferenceANGLE = true;
+ #endif
+ 
++#if defined(ANGLE_PLATFORM_LINUX) && (defined(ANGLE_ENABLE_OPENGL) || defined(ANGLE_ENABLE_VULKAN))
++    extensions.platformANGLEDeviceId = true;
++#endif
++
+     extensions.clientGetAllProcAddresses = true;
+     extensions.debug                     = true;
+     extensions.featureControlANGLE       = true;
+diff --git a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
+index 5737fc9edb9b3946da345343025955f7d127564c..24141b1c330cb5ebc3ff4a8ff09bbcbd02fb9246 100644
+--- a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
++++ b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
+@@ -318,8 +318,8 @@ egl::Error DisplayEGL::initialize(egl::Display *display)
+         reinterpret_cast<void *>(mDisplayAttributes.get(EGL_PLATFORM_ANGLE_EGL_HANDLE_ANGLE, 0));
+     EGLAttrib platformType =
+         mDisplayAttributes.get(EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE, 0);
+-    ANGLE_TRY(
+-        mEGL->initialize(platformType, display->getNativeDisplayId(), getEGLPath(), eglHandle));
++    ANGLE_TRY(mEGL->initialize(platformType, display->getNativeDisplayId(), mDisplayAttributes,
++                               getEGLPath(), eglHandle));
+ 
+     const gl::Version eglVersion(static_cast<uint8_t>(mEGL->majorVersion),
+                                  static_cast<uint8_t>(mEGL->minorVersion));
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+index a432a7d9fdaf8c993e05a94ede5c72072c744032..514eff70d347443a2b1b5be4883fda0ac412ce29 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+@@ -8,10 +8,12 @@
+ 
+ #include "libANGLE/renderer/gl/egl/FunctionsEGL.h"
+ 
++#include <sys/stat.h>
+ #include <algorithm>
+ 
+ #include "common/platform.h"
+ #include "common/string_utils.h"
++#include "gpu_info_util/SystemInfo.h"
+ #include "libANGLE/renderer/driver_utils.h"
+ #include "libANGLE/renderer/gl/FunctionsGL.h"
+ #include "libANGLE/renderer/gl/egl/functionsegl_typedefs.h"
+@@ -189,7 +191,9 @@ FunctionsEGL::~FunctionsEGL()
+     SafeDelete(mFnPtrs);
+ }
+ 
+-egl::Error FunctionsEGL::initialize(EGLAttrib platformType, EGLNativeDisplayType nativeDisplay)
++egl::Error FunctionsEGL::initialize(EGLAttrib platformType,
++                                    EGLNativeDisplayType nativeDisplay,
++                                    const egl::AttributeMap &displayAttributes)
+ {
+ #define ANGLE_GET_PROC_OR_WARNING(MEMBER, NAME)                \
+     do                                                         \
+@@ -232,20 +236,38 @@ egl::Error FunctionsEGL::initialize(EGLAttrib platformType, EGLNativeDisplayType
+     ANGLE_GET_PROC_OR_ERROR(&mFnPtrs->surfaceAttribPtr, eglSurfaceAttrib);
+     ANGLE_GET_PROC_OR_ERROR(&mFnPtrs->swapIntervalPtr, eglSwapInterval);
+ 
+-    if (IsValidPlatformTypeForPlatformDisplayConnection(platformType))
+-    {
+-        mEGLDisplay = getPlatformDisplay(platformType, nativeDisplay);
+-    }
+-    else
++    uint32_t systemDeviceIDHigh =
++        static_cast<uint32_t>(displayAttributes.get(EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE, 0));
++    uint32_t systemDeviceIDLow =
++        static_cast<uint32_t>(displayAttributes.get(EGL_PLATFORM_ANGLE_DEVICE_ID_LOW_ANGLE, 0));
++    uint64_t systemDeviceID =
++        angle::GetSystemDeviceIdFromParts(systemDeviceIDHigh, systemDeviceIDLow);
++
++    if (platformType == EGL_PLATFORM_SURFACELESS_MESA && systemDeviceID != 0)
+     {
+-        mEGLDisplay = mFnPtrs->getDisplayPtr(nativeDisplay);
++        // If a native device ID was provided for surfaceless, try looking for that specific device
++        // first.
++        mEGLDisplay = getNativeDisplay(&minorVersion, &majorVersion, systemDeviceID);
+     }
+ 
+-    if (mEGLDisplay != EGL_NO_DISPLAY &&
+-        mFnPtrs->initializePtr(mEGLDisplay, &majorVersion, &minorVersion) != EGL_TRUE)
++    if (mEGLDisplay == EGL_NO_DISPLAY)
+     {
+-        mEGLDisplay = EGL_NO_DISPLAY;
++        if (IsValidPlatformTypeForPlatformDisplayConnection(platformType))
++        {
++            mEGLDisplay = getPlatformDisplay(platformType, nativeDisplay);
++        }
++        else
++        {
++            mEGLDisplay = mFnPtrs->getDisplayPtr(nativeDisplay);
++        }
++
++        if (mEGLDisplay != EGL_NO_DISPLAY &&
++            mFnPtrs->initializePtr(mEGLDisplay, &majorVersion, &minorVersion) != EGL_TRUE)
++        {
++            mEGLDisplay = EGL_NO_DISPLAY;
++        }
+     }
++
+     if (mEGLDisplay == EGL_NO_DISPLAY)
+     {
+         // If no display was available, try to fallback to the first available
+@@ -415,7 +437,7 @@ EGLDisplay FunctionsEGL::getPlatformDisplay(EGLAttrib platformType,
+                                     reinterpret_cast<void *>(nativeDisplay), nullptr);
+ }
+ 
+-EGLDisplay FunctionsEGL::getNativeDisplay(int *major, int *minor)
++EGLDisplay FunctionsEGL::getNativeDisplay(int *major, int *minor, uint64_t systemDeviceID)
+ {
+     // We haven't queried extensions yet since some platforms require a display
+     // to do so. We'll query them now since we need some for this fallback, and
+@@ -427,10 +449,11 @@ EGLDisplay FunctionsEGL::getNativeDisplay(int *major, int *minor)
+     }
+     angle::SplitStringAlongWhitespace(extensions, &mExtensions);
+ 
+-    // This fallback mechanism makes use of:
++    // This function makes use of:
+     // - EGL_EXT_device_enumeration or EGL_EXT_device_base for eglQueryDevicesEXT
+     // - EGL_EXT_platform_base for eglGetPlatformDisplayEXT
+     // - EGL_EXT_platform_device for EGL_PLATFORM_DEVICE_EXT
++    // - EGL_EXT_device_query for eglQueryDeviceStringEXT if systemDeviceID is non-zero
+     PFNEGLQUERYDEVICESEXTPROC queryDevices;
+     PFNEGLGETPLATFORMDISPLAYEXTPROC getPlatformDisplay;
+     bool hasQueryDevicesEXT =
+@@ -447,6 +470,20 @@ EGLDisplay FunctionsEGL::getNativeDisplay(int *major, int *minor)
+         return EGL_NO_DISPLAY;
+     }
+ 
++    PFNEGLQUERYDEVICESTRINGEXTPROC queryDeviceString = nullptr;
++    if (systemDeviceID != 0)
++    {
++        bool hasQueryDeviceStringEXT = hasExtension("EGL_EXT_device_query");
++        if (!hasQueryDeviceStringEXT)
++        {
++            return EGL_NO_DISPLAY;
++        }
++        if (!SetPtr(&queryDeviceString, getProcAddress("eglQueryDeviceStringEXT")))
++        {
++            return EGL_NO_DISPLAY;
++        }
++    }
++
+     // Get a list of native device objects.
+     const EGLint kMaxDevices = 32;
+     EGLDeviceEXT eglDevices[kMaxDevices];
+@@ -459,6 +496,24 @@ EGLDisplay FunctionsEGL::getNativeDisplay(int *major, int *minor)
+     // Look for the first native device that gives us a valid display.
+     for (EGLint i = 0; i < numDevices; i++)
+     {
++        if (systemDeviceID != 0)
++        {
++#if defined(ANGLE_PLATFORM_LINUX)
++            // We are looking for a specific DRM device.
++            const char *renderNodePath =
++                queryDeviceString(eglDevices[i], EGL_DRM_RENDER_NODE_FILE_EXT);
++            if (!renderNodePath)
++                continue;
++            struct stat sb;
++            if (stat(renderNodePath, &sb) < 0)
++                continue;
++            if (sb.st_rdev != systemDeviceID)
++                continue;
++#else
++            // The other EGL using platform (Android) does not have a concept of a system device ID.
++            continue;
++#endif
++        }
+         EGLDisplay display = getPlatformDisplay(EGL_PLATFORM_DEVICE_EXT, eglDevices[i], nullptr);
+         if (mFnPtrs->getErrorPtr() != EGL_SUCCESS)
+         {
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGL.h b/src/libANGLE/renderer/gl/egl/FunctionsEGL.h
+index b93ea49e6b79981b864a186f42f5c6007962c161..cb42aa80e0d80d03830df921b2f5d1b964a5efc1 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGL.h
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGL.h
+@@ -15,6 +15,7 @@
+ #include <string>
+ #include <vector>
+ 
++#include "libANGLE/AttributeMap.h"
+ #include "libANGLE/Error.h"
+ 
+ namespace rx
+@@ -33,7 +34,9 @@ class FunctionsEGL
+     std::string vendorString;
+     std::string versionString;
+ 
+-    egl::Error initialize(EGLAttrib platformType, EGLNativeDisplayType nativeDisplay);
++    egl::Error initialize(EGLAttrib platformType,
++                          EGLNativeDisplayType nativeDisplay,
++                          const egl::AttributeMap &displayAttributes);
+     egl::Error terminate();
+ 
+     virtual void *getProcAddress(const char *name) const = 0;
+@@ -130,7 +133,7 @@ class FunctionsEGL
+     EGLDisplay getPlatformDisplay(EGLAttrib platformType, EGLNativeDisplayType nativeDisplay);
+ 
+     // Fallback mechanism for creating a display from a native device object.
+-    EGLDisplay getNativeDisplay(int *major, int *minor);
++    EGLDisplay getNativeDisplay(int *major, int *minor, uint64_t systemDeviceID = 0);
+ 
+     struct EGLDispatchTable;
+     EGLDispatchTable *mFnPtrs;
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.cpp b/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.cpp
+index ddf845523a280daaaf029fe4838c703c398894b3..12f2335ff0e4e42ee82384547f02adbfd3f7eaad 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.cpp
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.cpp
+@@ -30,6 +30,7 @@ FunctionsEGLDL::~FunctionsEGLDL() {}
+ 
+ egl::Error FunctionsEGLDL::initialize(EGLAttrib platformType,
+                                       EGLNativeDisplayType nativeDisplay,
++                                      const egl::AttributeMap &displayAttributes,
+                                       const char *libName,
+                                       void *eglHandle)
+ {
+@@ -59,7 +60,7 @@ egl::Error FunctionsEGLDL::initialize(EGLAttrib platformType,
+         return egl::Error(EGL_NOT_INITIALIZED, "Could not find eglGetProcAddress");
+     }
+ 
+-    return FunctionsEGL::initialize(platformType, nativeDisplay);
++    return FunctionsEGL::initialize(platformType, nativeDisplay, displayAttributes);
+ }
+ 
+ void *FunctionsEGLDL::getProcAddress(const char *name) const
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.h b/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.h
+index 22cfaf952404fd7d0dd1956708933974328857a0..dda6522de0a74da20dbe57481cd4d0095cbb1faf 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.h
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.h
+@@ -22,6 +22,7 @@ class FunctionsEGLDL : public FunctionsEGL
+ 
+     egl::Error initialize(EGLAttrib platformType,
+                           EGLNativeDisplayType nativeDisplay,
++                          const egl::AttributeMap &displayAttributes,
+                           const char *libName,
+                           void *eglHandle);
+     void *getProcAddress(const char *name) const override;
+diff --git a/src/libANGLE/renderer/vulkan/DisplayVk.cpp b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
+index baf4ab070057b4d35b0426952af077c90905e810..f862dc7c43c33e19242224a296f145e20233fa12 100644
+--- a/src/libANGLE/renderer/vulkan/DisplayVk.cpp
++++ b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
+@@ -11,6 +11,7 @@
+ 
+ #include "common/debug.h"
+ #include "common/system_utils.h"
++#include "gpu_info_util/SystemInfo.h"
+ #include "libANGLE/BlobCache.h"
+ #include "libANGLE/Context.h"
+ #include "libANGLE/Display.h"
+@@ -170,14 +171,16 @@ egl::Error DisplayVk::initialize(egl::Display *display)
+ 
+     const vk::UseDebugLayers useDebugLayers = ShouldLoadDebugLayers(attribs);
+     const angle::vk::ICD desiredICD         = ChooseICDFromAttribs(attribs);
+-    const uint32_t preferredVendorId =
++    const uint32_t systemDeviceIdHigh =
+         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE, 0));
+-    const uint32_t preferredDeviceId =
++    const uint32_t systemDeviceIdLow =
+         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_LOW_ANGLE, 0));
++    const uint64_t systemDeviceId =
++        angle::GetSystemDeviceIdFromParts(systemDeviceIdHigh, systemDeviceIdLow);
+ 
+     angle::Result result = mRenderer->initialize(
+-        this, this, desiredICD, preferredVendorId, preferredDeviceId, useDebugLayers,
+-        getWSIExtension(), getWSILayer(), getWindowSystem(), mState.featureOverrides);
++        this, this, desiredICD, systemDeviceId, useDebugLayers, getWSIExtension(),
++        getWSILayer(), getWindowSystem(), mState.featureOverrides);
+     ANGLE_TRY(angle::ToEGL(result, EGL_NOT_INITIALIZED));
+ 
+     mDeviceQueueIndex = mRenderer->getDeviceQueueIndex(egl::ContextPriority::Medium);
+diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.cpp b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
+index dde408b6aa2ca87930ed4b459e93bdde7a2c8a2a..a6d46b246ac0945e74c63c66b14c2f31de6da898 100644
+--- a/src/libANGLE/renderer/vulkan/vk_renderer.cpp
++++ b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
+@@ -2283,8 +2283,7 @@ angle::Result Renderer::enableInstanceExtensions(vk::ErrorContext *context,
+ angle::Result Renderer::initialize(vk::ErrorContext *context,
+                                    vk::GlobalOps *globalOps,
+                                    angle::vk::ICD desiredICD,
+-                                   uint32_t preferredVendorId,
+-                                   uint32_t preferredDeviceId,
++                                   uint64_t systemDeviceId,
+                                    UseDebugLayers useDebugLayers,
+                                    const char *wsiExtension,
+                                    const char *wsiLayer,
+@@ -2512,9 +2511,9 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
+     ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount,
+                                                      physicalDevices.data()));
+-    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, physicalDevices, mEnabledICD,
+-                         preferredVendorId, preferredDeviceId, &mPhysicalDevice,
+-                         &mPhysicalDeviceProperties);
++    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, vkGetPhysicalDeviceProperties2KHR,
++                         vkEnumerateDeviceExtensionProperties, physicalDevices, mEnabledICD,
++                         systemDeviceId, &mPhysicalDevice, &mPhysicalDeviceProperties);
+ 
+     // The device version that is assumed by ANGLE is the minimum of the actual device version and
+     // the highest it's allowed to use.
+diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.h b/src/libANGLE/renderer/vulkan/vk_renderer.h
+index 6c5d3af74cb6937ff64823efbad64479fe70ab69..14b3fd20052ad55987e416f793df0693ccbf68f6 100644
+--- a/src/libANGLE/renderer/vulkan/vk_renderer.h
++++ b/src/libANGLE/renderer/vulkan/vk_renderer.h
+@@ -143,8 +143,7 @@ class Renderer : angle::NonCopyable
+     angle::Result initialize(vk::ErrorContext *context,
+                              vk::GlobalOps *globalOps,
+                              angle::vk::ICD desiredICD,
+-                             uint32_t preferredVendorId,
+-                             uint32_t preferredDeviceId,
++                             uint64_t systemDeviceId,
+                              UseDebugLayers useDebugLayers,
+                              const char *wsiExtension,
+                              const char *wsiLayer,
+diff --git a/src/tests/test_utils/VulkanHelper.cpp b/src/tests/test_utils/VulkanHelper.cpp
+index e4ef2b4355f4a694c287f382a2fd004a5e7011b8..71d73d8490d99badc4afa71ad271cf98219abe94 100644
+--- a/src/tests/test_utils/VulkanHelper.cpp
++++ b/src/tests/test_utils/VulkanHelper.cpp
+@@ -261,7 +261,8 @@ void VulkanHelper::initialize(bool useSwiftshader, bool enableValidationLayers)
+     ASSERT(physicalDevices.size() > 0);
+ 
+     VkPhysicalDeviceProperties physicalDeviceProperties;
+-    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, physicalDevices, icd, 0, 0,
++    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, vkGetPhysicalDeviceProperties2,
++                         vkEnumerateDeviceExtensionProperties, physicalDevices, icd, 0,
+                          &mPhysicalDevice, &physicalDeviceProperties);
+ 
+     vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &mMemoryProperties);
+@@ -458,6 +459,10 @@ void VulkanHelper::initializeFromANGLE()
+     vkResult = vkCreateCommandPool(mDevice, &commandPoolCreateInfo, nullptr, &mCommandPool);
+     ASSERT(vkResult == VK_SUCCESS);
+ 
++    vkGetPhysicalDeviceProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
++        vkGetInstanceProcAddr(mInstance, "vkGetPhysicalDeviceProperties2"));
++    ASSERT(vkGetPhysicalDeviceProperties2);
++
+     vkGetPhysicalDeviceImageFormatProperties2 =
+         reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(
+             vkGetInstanceProcAddr(mInstance, "vkGetPhysicalDeviceImageFormatProperties2"));
+diff --git a/src/tests/test_utils/VulkanHelper.h b/src/tests/test_utils/VulkanHelper.h
+index bf288c75bebe53ef58b41954f139be74bbf80b7e..3958b1f0a21553ec76074aa1890ee36474722421 100644
+--- a/src/tests/test_utils/VulkanHelper.h
++++ b/src/tests/test_utils/VulkanHelper.h
+@@ -177,6 +177,7 @@ class VulkanHelper
+     bool mHasExternalSemaphoreFd      = false;
+     bool mHasExternalSemaphoreFuchsia = false;
+     bool mHasUnifiedImageLayouts      = false;
++    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = nullptr;
+     PFN_vkGetPhysicalDeviceImageFormatProperties2 vkGetPhysicalDeviceImageFormatProperties2 =
+         nullptr;
+     PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR       = nullptr;
