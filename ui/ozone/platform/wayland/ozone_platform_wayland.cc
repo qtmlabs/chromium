@@ -361,6 +361,10 @@ class OzonePlatformWayland : public OzonePlatform,
       // TODO(crbug.com/425715421): Remove this once support is implemented.
       properties->supports_split_view_drag_and_drop = false;
 
+      // The GPU process on Ozone/Wayland does not need to connect to a display
+      // server to function, so enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
+
       initialised = true;
     }
 

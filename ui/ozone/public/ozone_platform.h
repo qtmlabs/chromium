@@ -158,6 +158,11 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // Whether the platform supports drag and drop as an entrypoint to create
     // new Split Views.
     bool supports_split_view_drag_and_drop = true;
+
+#if BUILDFLAG(IS_LINUX)
+    // Indicates that the platform supports GPU process sandboxing.
+    bool supports_gpu_sandboxing = false;
+#endif
   };
 
   // Groups platform properties that can only be known at run time.
