@@ -213,13 +213,6 @@ stage_install_common() {
     done
   fi
 
-  # ANGLE's libvulkan library
-  if [ -f "${OUTPUTDIR}/libvulkan.so.1" ]; then
-    file="libvulkan.so.1"
-    strippedfile="${OUTPUTDIR}/${file}.stripped"
-    install -m ${SHLIB_PERMS} "${strippedfile}" "${STAGEDIR}/${INSTALLDIR}/${file}"
-  fi
-
   # SwiftShader VK
   if [ -f "${OUTPUTDIR}/libvk_swiftshader.so" ]; then
     install -m 755 -d "${STAGEDIR}/${INSTALLDIR}/"
