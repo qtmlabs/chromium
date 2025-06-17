@@ -147,6 +147,9 @@ class WaylandWindow : public PlatformWindow,
   // Called when the text input focus changed on this window.
   void OnTextInputFocusChanged(bool focused);
 
+  // Called when the window cursor needs to be resent to the compositor.
+  void ForceUpdateCursor();
+
   // Returns the focus status of this window.
   bool HasPointerFocus() const;
   bool HasKeyboardFocus() const;

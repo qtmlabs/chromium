@@ -92,6 +92,13 @@ void WaylandPointer::OnEnter(void* data,
       gfx::PointF(static_cast<float>(wl_fixed_to_double(surface_x)),
                   static_cast<float>(wl_fixed_to_double(surface_y))),
       timestamp, GetEventDispatchPolicy());
+
+  // Whenever the window gets the pointer focus back, the cursor shape must be
+  // updated. Otherwise, it is invalidated upon wl_pointer::leave and is not
+  // restored by the Wayland compositor.
+  if (window) {
+    window->ForceUpdateCursor();
+  }
 }
 
 // static
