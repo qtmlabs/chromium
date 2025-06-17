@@ -5076,7 +5076,13 @@ hooks = [
                '-m', 'src/build/cros_cache/chrome-sdk/misc/test_metadata.jsonpb',
                '-b', '{cros_boards}'],
   },
-
+  # Apply QTM Labs specific patches
+  {
+    'name': 'qtmlabs_apply_patches',
+    'pattern': '.',
+    'condition': 'host_os == "linux"',
+    'action': ['src/qtmlabs/apply_all_patches'],
+  },
 ]
 
 # Add any corresponding DEPS files from this list to chromium.exclusions in
