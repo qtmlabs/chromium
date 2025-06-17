@@ -482,6 +482,12 @@ CreateVulkanYcbcrConversionInfo(
                           : format_props.optimalTilingFeatures;
   }
 
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kVulkanForceYCbCrLinearSampling)) {
+    format_features |=
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
+  }
+
   uint64_t external_format = valid_ycbcr_info->external_format;
   // As per the spec here [1], if the format does not support
   // VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT,

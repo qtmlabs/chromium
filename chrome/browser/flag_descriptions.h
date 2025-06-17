@@ -8523,6 +8523,12 @@ inline constexpr char kEnableDlpFileSystemApiDescription[] =
     "Enable DLP upload scan support for FileSystem API-backed cloud storage on "
     "ChromeOS.";
 
+inline constexpr char kVulkanForceYCbCrLinearSamplingName[] =
+    "Vulkan: Force linear sampling for YUV";
+inline constexpr char kVulkanForceYCbCrLinearSamplingDescription[] =
+    "Force usage of YUV linear sampling on Vulkan even if it's not reported"
+    " as supported by the graphics driver";
+
 // ============================================================================
 // Don't just add flags to the end, put them in the alphabetical order.
 // ============================================================================
