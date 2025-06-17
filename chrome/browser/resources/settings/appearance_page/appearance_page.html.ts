@@ -17,7 +17,6 @@ export function getHtml(this: SettingsAppearancePageElement) {
           ?hidden="${!this.pageVisibility_.setTheme}"
           label="$i18n{themes}" sub-label="${this.themeSublabel_}"
           @click="${this.onThemeClick_}" external></cr-link-row>
-<if expr="not is_linux">
       ${this.themeIdPref_?.value ? html`
         <div class="separator"></div>
         <cr-button id="useDefault" @click="${this.onUseDefaultClick_}"
@@ -25,29 +24,6 @@ export function getHtml(this: SettingsAppearancePageElement) {
           $i18n{resetToDefault}
         </cr-button>
       ` : ''}
-</if>
-<if expr="is_linux">
-      <div class="settings-row continuation"
-          ?hidden="${!this.showThemesSecondary_()}"
-          id="themesSecondaryActions">
-        <div class="separator"></div>
-        ${this.showUseClassic_() ? html`
-          <cr-button id="useDefault" @click="${this.onUseDefaultClick_}">
-            $i18n{useClassicTheme}
-          </cr-button>
-        ` : ''}
-        ${this.showUseGtk_() ? html`
-          <cr-button id="useGtk" @click="${this.onUseGtkClick_}">
-            $i18n{useGtkTheme}
-          </cr-button>
-        ` : ''}
-        ${this.showUseQt_() ? html`
-          <cr-button id="useQt" @click="${this.onUseQtClick_}">
-            $i18n{useQtTheme}
-          </cr-button>
-        ` : ''}
-      </div>
-</if>
     </div>
     <div id="toolbarRow" class="settings-row">
       <cr-link-row id="customizeToolbar"

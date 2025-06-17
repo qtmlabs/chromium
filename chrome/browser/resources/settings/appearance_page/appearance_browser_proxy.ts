@@ -24,11 +24,6 @@ export interface AppearanceBrowserProxy {
   resetPinnedToolbarActions(): void;
   useDefaultTheme(): void;
 
-  // <if expr="is_linux">
-  useGtkTheme(): void;
-  useQtTheme(): void;
-  // </if>
-
   validateStartupPage(url: string): Promise<boolean>;
   pinnedToolbarActionsAreDefault(): Promise<boolean>;
 }
@@ -79,16 +74,6 @@ export class AppearanceBrowserProxyImpl implements AppearanceBrowserProxy {
   useDefaultTheme() {
     chrome.send('useDefaultTheme');
   }
-
-  // <if expr="is_linux">
-  useGtkTheme() {
-    chrome.send('useGtkTheme');
-  }
-
-  useQtTheme() {
-    chrome.send('useQtTheme');
-  }
-  // </if>
 
   validateStartupPage(url: string) {
     return sendWithPromise<boolean>('validateStartupPage', url);
