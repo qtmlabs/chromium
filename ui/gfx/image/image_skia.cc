@@ -251,8 +251,9 @@ std::vector<ImageSkiaRep>::const_iterator ImageSkiaStorage::FindRepresentation(
     }
     if (scale != resource_scale) {
       auto iter = FindRepresentation(resource_scale, fetch_new_image);
-      CHECK(iter != image_reps_.end());
-      image = iter->unscaled() ? (*iter) : ScaleImageSkiaRep(*iter, scale);
+      if (iter != image_reps_.end()) {
+        image = iter->unscaled() ? (*iter) : ScaleImageSkiaRep(*iter, scale);
+      }
     } else {
       image = source_->GetImageForScale(scale);
       // Image may be missing for the specified scale in some cases, such like
