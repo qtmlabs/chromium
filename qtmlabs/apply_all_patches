@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$(realpath "$0")")"/..
+
+if ! [ -d qtmlabs/patches ]; then
+	exit
+fi
+
+for tree in $(find qtmlabs/patches -name 'MANIFEST' -type f -print | xargs dirname | sed 's,^qtmlabs/patches/,,' | sort -u); do
+	qtmlabs/apply_patches "$tree" qtmlabs/patches/"$tree"
+done
