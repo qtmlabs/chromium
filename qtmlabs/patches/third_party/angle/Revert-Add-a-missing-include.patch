@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Tue, 17 Jun 2025 10:42:46 +0700
+Subject: Revert "Add a missing #include."
+
+This reverts commit 2ad7b23b13aef70384a3ffe641ea28bc12f83dec.
+
+diff --git a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+index e9baec4337152e1275806a70f4bc87681e397bc2..45f674a29bf41576d8bbcc35892fa8f2c20e5bb3 100644
+--- a/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
++++ b/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp
+@@ -19,7 +19,6 @@
+ #if defined(ANGLE_HAS_LIBDRM)
+ // clang-format off
+ #include <fcntl.h>
+-#include <unistd.h>
+ #include <xf86drm.h>
+ // clang-format on
+ #endif  // defined(ANGLE_HAS_LIBDRM)

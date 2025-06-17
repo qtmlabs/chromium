@@ -1,0 +1,233 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Tue, 17 Jun 2025 10:42:46 +0700
+Subject: gpu_info_util: Use libdrm to discover GPUs on desktop Linux
+
+This CL adds a new libdrm-based GPU discovery backend that's enabled by
+default on desktop Linux. This new backend will use the device ID of the
+DRM render node as the systemDeviceId, allowing Chromium to discover and
+manage multiple GPUs on Linux.
+
+diff --git a/BUILD.gn b/BUILD.gn
+index d6969b427ed614ec861c338cdd127ba4717dad1d..a01c6b2c87cfa5c395ad061d5e4ca0b06955ed3d 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -31,12 +31,15 @@ if (angle_has_build) {
+ }
+ 
+ declare_args() {
++  # Use libdrm to collect GPU information on Linux.
++  use_libdrm = is_linux && angle_has_build
++
+   # Use the PCI lib to collect GPU information on Linux.
+   use_libpci =
+       (is_linux || is_chromeos) &&
+       (angle_use_x11 || angle_use_wayland || use_ozone) && angle_has_build
+ 
+-  # Enable using Vulkan to collect system info as a fallback.
++  # Enable using Vulkan to collect system info as another fallback.
+   angle_enable_vulkan_system_info = is_chromeos
+ 
+   # Link in system libGL, to work with apitrace.  See doc/DebuggingTips.md.
+@@ -775,6 +778,20 @@ angle_static_library("angle_gpu_info_util") {
+     libs += [ "pci" ]
+   }
+ 
++  if (use_libdrm) {
++    sources += libangle_gpu_info_util_libdrm_sources
++    defines += [ "GPU_INFO_USE_LIBDRM" ]
++
++    # When build_with_chromium=true we need to include "//build/config/linux/libdrm" while it's
++    # beneficial to be more specific with standalone ANGLE, especially when it comes to including it
++    # as a dependency in other projects (such as Dawn).
++    if (build_with_chromium) {
++      deps += [ "//build/config/linux/libdrm" ]
++    } else {
++      deps += [ "third_party/libdrm" ]
++    }
++  }
++
+   if (is_apple) {
+     frameworks = [
+       "CoreFoundation.framework",
+diff --git a/DEPS b/DEPS
+index cee5b4bbdbe096d3b6dcb6c8873b333c921e431f..f6f4afde806baa6fe59dbbfad1526ed521768306 100644
+--- a/DEPS
++++ b/DEPS
+@@ -48,7 +48,7 @@ vars = {
+   # build ARC++ support libraries.
+   'checkout_android_native_support': 'checkout_android or checkout_chromeos',
+ 
+-  # Check out Mesa and libdrm in ANGLE's third_party folder.
++  # Check out Mesa in ANGLE's third_party folder.
+   'checkout_angle_mesa': False,
+ 
+   # Check out PartitionAlloc in ANGLE's third_party folder.
+@@ -908,7 +908,7 @@ deps = {
+ 
+   'third_party/libdrm/src': {
+     'url': Var('chromium_git') + '/chromiumos/third_party/libdrm.git@e984d448b8b17aab853369e6c203e53719f46de1',
+-    'condition': 'checkout_angle_mesa',
++    'condition': 'not build_with_chromium',
+   },
+ 
+   # libjpeg_turbo is used by glmark2.
+diff --git a/scripts/export_targets.py b/scripts/export_targets.py
+index a4941913f5b293e13826bf164cb169b6eb445d10..e449095b6127dcc20a90c547bc1a1de4616e25c5 100755
+--- a/scripts/export_targets.py
++++ b/scripts/export_targets.py
+@@ -296,6 +296,7 @@ IGNORED_DIRECTORIES = {
+     '//buildtools/third_party/libc++',
+     '//third_party/libc++/src',
+     '//third_party/abseil-cpp',
++    '//third_party/gn/libdrm',
+     '//third_party/SwiftShader',
+     '//third_party/dawn',
+     '//third_party/wayland',
+diff --git a/src/gpu_info_util/SystemInfo_internal.h b/src/gpu_info_util/SystemInfo_internal.h
+index 4da60c18bbe8b611953095537d611d0a588abece..8a46e6e07321a07a1ef2eeeadbe53599c1fc2686 100644
+--- a/src/gpu_info_util/SystemInfo_internal.h
++++ b/src/gpu_info_util/SystemInfo_internal.h
+@@ -19,6 +19,8 @@ namespace angle
+ bool GetPCIDevicesWithLibPCI(std::vector<GPUDeviceInfo> *devices);
+ // Defined in SystemInfo_x11 when GPU_INFO_USE_X11 is defined.
+ bool GetNvidiaDriverVersionWithXNVCtrl(std::string *version);
++// Defined in SystemInfo_libdrm when GPU_INFO_USE_LIBDRM is defined.
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices);
+ 
+ // Target specific helper functions that can be compiled on all targets
+ // Live in SystemInfo.cpp
+diff --git a/src/gpu_info_util/SystemInfo_libdrm.cpp b/src/gpu_info_util/SystemInfo_libdrm.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..953f9da8922f307d92617294a84a3f6aa7cd7fb4
+--- /dev/null
++++ b/src/gpu_info_util/SystemInfo_libdrm.cpp
+@@ -0,0 +1,79 @@
++//
++// Copyright 2023 The ANGLE Project Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++//
++
++// SystemInfo_libdrm.cpp: implementation of the libdrm-specific parts of SystemInfo.h
++
++#include "common/unsafe_buffers.h"
++#include "gpu_info_util/SystemInfo_internal.h"
++
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <xf86drm.h>
++#include <string>
++#include <vector>
++
++#if !defined(GPU_INFO_USE_LIBDRM)
++#    error SystemInfo_libdrm.cpp compiled without GPU_INFO_USE_LIBDRM
++#endif
++
++namespace angle
++{
++
++// Adds an entry per GPU found and fills the device, vendor and system device ID.
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices)
++{
++    int numDevices = drmGetDevices2(DRM_DEVICE_GET_PCI_REVISION, nullptr, 0);
++    if (numDevices <= 0)
++        return false;
++
++    std::vector<drmDevicePtr> drmDevices(numDevices);
++    if (drmGetDevices2(DRM_DEVICE_GET_PCI_REVISION, drmDevices.data(), numDevices) != numDevices)
++        return false;
++
++    for (drmDevicePtr drmDevice : drmDevices)
++    {
++        if (!(drmDevice->available_nodes & (1 << DRM_NODE_RENDER)))
++            continue;
++        // SAFETY: bounds checked
++        const char *render_node = ANGLE_UNSAFE_BUFFERS(drmDevice->nodes[DRM_NODE_RENDER]);
++
++        int fd = open(render_node, O_RDWR | O_CLOEXEC);
++        if (fd < 0)
++            continue;
++
++        struct stat sb;
++        if (fstat(fd, &sb) < 0)
++            continue;
++
++        drmVersionPtr version = drmGetVersion(fd);
++        std::string driverName(version->name, version->name_len);
++        drmFreeVersion(version);
++
++        close(fd);
++
++        // skip the virtual GEM kernel driver
++        if (driverName == "vgem")
++            continue;
++
++        GPUDeviceInfo info;
++        info.systemDeviceId = sb.st_rdev;
++        if (drmDevice->bustype == DRM_BUS_PCI)
++        {
++            info.vendorId   = drmDevice->deviceinfo.pci->vendor_id;
++            info.deviceId   = drmDevice->deviceinfo.pci->device_id;
++            info.revisionId = drmDevice->deviceinfo.pci->revision_id;
++        }
++
++        devices->push_back(info);
++    }
++
++    drmFreeDevices(drmDevices.data(), numDevices);
++
++    return !devices->empty();
++}
++
++}  // namespace angle
+diff --git a/src/gpu_info_util/SystemInfo_linux.cpp b/src/gpu_info_util/SystemInfo_linux.cpp
+index 457b6ea5b01b096783b8f5d84e75a7ce230563aa..b8bccccb592b6d585087d3b775a8e4177656c2ee 100644
+--- a/src/gpu_info_util/SystemInfo_linux.cpp
++++ b/src/gpu_info_util/SystemInfo_linux.cpp
+@@ -69,16 +69,26 @@ bool GetPCIDevicesWithLibPCI(std::vector<GPUDeviceInfo> *devices)
+ }
+ #endif
+ 
++#if !defined(GPU_INFO_USE_LIBDRM)
++bool GetDevicesWithLibDRM(std::vector<GPUDeviceInfo> *devices)
++{
++    return false;
++}
++#endif
++
+ bool GetSystemInfo(SystemInfo *info)
+ {
+-    if (!GetPCIDevicesWithLibPCI(&(info->gpus)) || info->gpus.size() == 0)
++    if (!GetDevicesWithLibDRM(&(info->gpus)))
+     {
++        if (!GetPCIDevicesWithLibPCI(&(info->gpus)) || info->gpus.size() == 0)
++        {
+ #if defined(ANGLE_USE_VULKAN_SYSTEM_INFO)
+-        // Try vulkan backend to get GPU info
+-        return GetSystemInfoVulkan(info);
++            // Try vulkan backend to get GPU info
++            return GetSystemInfoVulkan(info);
+ #else
+-        return false;
++            return false;
+ #endif  // defined(ANGLE_HAS_VULKAN_SYSTEM_INFO)
++        }
+     }
+ 
+     GetDualGPUInfo(info);
+diff --git a/src/libGLESv2.gni b/src/libGLESv2.gni
+index 2360cc03a993546d4ce4124e9854f242cbe252f7..d95540c130a88e4bf10af57f85f3efdd30be85a4 100644
+--- a/src/libGLESv2.gni
++++ b/src/libGLESv2.gni
+@@ -222,6 +222,9 @@ libangle_gpu_info_util_vulkan_sources = [
+ libangle_gpu_info_util_libpci_sources =
+     [ "src/gpu_info_util/SystemInfo_libpci.cpp" ]
+ 
++libangle_gpu_info_util_libdrm_sources =
++    [ "src/gpu_info_util/SystemInfo_libdrm.cpp" ]
++
+ libangle_gpu_info_util_x11_sources = [ "src/gpu_info_util/SystemInfo_x11.cpp" ]
+ 
+ libangle_gpu_info_util_mac_sources = [
