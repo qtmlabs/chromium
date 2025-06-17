@@ -159,6 +159,11 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // TODO(https://crbug.com/500609035): Remove when active gpu device info is
     // passed to media.
     bool webgpu_on_vulkan_via_gl_interop = false;
+
+#if BUILDFLAG(IS_LINUX)
+    // Indicates that the platform supports GPU process sandboxing.
+    bool supports_gpu_sandboxing = false;
+#endif
   };
 
   // Groups platform properties that can only be known at run time.
