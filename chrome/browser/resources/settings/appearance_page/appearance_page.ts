@@ -77,10 +77,6 @@ export interface SettingsAppearancePageElement {
 export enum SystemTheme {
   // Either classic or web theme.
   DEFAULT = 0,
-  // <if expr="is_linux">
-  GTK = 1,
-  QT = 2,
-  // </if>
 }
 
 function normalizePageVisibility(
@@ -147,10 +143,6 @@ export class SettingsAppearancePageElement extends
       themePolicyColorPref_: {type: Object},
       verticalTabsEnabledPref_: {type: Object},
 
-      // <if expr="is_linux">
-      themeSystemThemePref_: {type: Object},
-      // </if>
-
       colorSchemeModeOptions_: {type: Array},
       selectedColorSchemeMode_: {type: Number},
       fontSizeOptions_: {type: Array},
@@ -213,11 +205,6 @@ export class SettingsAppearancePageElement extends
       undefined;
   protected accessor verticalTabsEnabledPref_: PrefObject<boolean>|undefined =
       undefined;
-
-  // <if expr="is_linux">
-  protected accessor themeSystemThemePref_: PrefObject<number>|undefined =
-      undefined;
-  // </if>
 
   protected accessor colorSchemeModeOptions_:
       Array<{value: ColorSchemeMode, name: string}> = [
@@ -332,9 +319,6 @@ export class SettingsAppearancePageElement extends
       'browser.show_forward_button': 'showForwardButtonPref_',
       'browser.show_home_button': 'showHomeButtonPref_',
       'extensions.theme.id': 'themeIdPref_',
-      // <if expr="is_linux">
-      'extensions.theme.system_theme': 'themeSystemThemePref_',
-      // </if>
       'homepage': 'homepagePref_',
       'homepage_is_newtabpage': 'homepageIsNewTabPagePref_',
       'side_panel.alignment_overrides': 'sidePanelAlignmentOverridesPref_',
@@ -379,19 +363,9 @@ export class SettingsAppearancePageElement extends
       this.defaultFontSizeChanged_();
     }
 
-    // <if expr="is_linux">
-    if (changedPrivateProperties.has('themeSystemThemePref_')) {
-      this.systemTheme_ = this.themeSystemThemePref_!.value;
-    }
-    // </if>
-
     if (changedPrivateProperties.has('themeIdPref_') ||
         changedPrivateProperties.has('systemTheme_') ||
-        changedPrivateProperties.has('themePolicyColorPref_')
-        // <if expr="is_linux">
-        || changedPrivateProperties.has('themeSystemThemePref_')
-        // </if>
-    ) {
+        changedPrivateProperties.has('themePolicyColorPref_')) {
       this.themeChanged_();
     }
 
@@ -473,66 +447,10 @@ export class SettingsAppearancePageElement extends
     this.appearanceBrowserProxy_.resetPinnedToolbarActions();
   }
 
-  // <if expr="is_linux">
-  /** @return Whether to show the "USE CLASSIC" button. */
-  protected showUseClassic_(): boolean {
-    const themeId = this.themeIdPref_?.value;
-    return !!themeId || this.systemTheme_ !== SystemTheme.DEFAULT;
-  }
 
-  /** @return Whether to show the "USE GTK" button. */
-  protected showUseGtk_(): boolean {
-    const themeId = this.themeIdPref_?.value;
-    return (!!themeId || this.systemTheme_ !== SystemTheme.GTK) &&
-        !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  /** @return Whether to show the "USE QT" button. */
-  protected showUseQt_(): boolean {
-    const themeId = this.themeIdPref_?.value;
-    return (!!themeId || this.systemTheme_ !== SystemTheme.QT) &&
-        !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  /**
-   * @return Whether to show the secondary area where "USE CLASSIC",
-   *     "USE GTK", and "USE QT" buttons live.
-   */
-  protected showThemesSecondary_(): boolean {
-    const themeId = this.themeIdPref_?.value;
-    return !!themeId || !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  protected onUseGtkClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useGtkTheme();
-  }
-
-  protected onUseQtClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useQtTheme();
-  }
-
-  /** @return Whether to show the color scheme mode toggle. */
-  protected showColorSchemeMode_(): boolean {
-    const themeId = this.themeIdPref_?.value;
-    return !!themeId ||
-        this.systemTheme_ !== SystemTheme.GTK &&
-        this.systemTheme_ !== SystemTheme.QT;
-  }
-  // </if>
-
-  // <if expr="not is_linux">
   protected showColorSchemeMode_(): boolean {
     return true;
   }
-  // </if>
 
   private themeChanged_() {
     if (this.themeIdPref_ === undefined || this.systemTheme_ === undefined) {
@@ -560,24 +478,7 @@ export class SettingsAppearancePageElement extends
       return;
     }
 
-    // <if expr="is_linux">
-    let i18nId: string;
-    switch (this.systemTheme_) {
-      case SystemTheme.GTK:
-        i18nId = 'gtkTheme';
-        break;
-      case SystemTheme.QT:
-        i18nId = 'qtTheme';
-        break;
-      default:
-        i18nId = 'classicTheme';
-        break;
-    }
-    this.themeSublabel_ = this.i18n(i18nId);
-    // </if>
-    // <if expr="not is_linux">
-      this.themeSublabel_ = '';
-    // </if>
+    this.themeSublabel_ = '';
   }
 
   /** @return Whether applied theme is set by policy. */

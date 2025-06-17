@@ -220,87 +220,6 @@ suite('AppearancePage', function() {
 
   const THEME_ID_PREF = 'extensions.theme.id';
 
-  // <if expr="is_linux">
-  const SYSTEM_THEME_PREF = 'extensions.theme.system_theme';
-
-  test('useDefaultThemeLinux', async () => {
-    await colorSchemeHandler.whenCalled('initializeColorSchemeMode');
-
-    assertFalse(!!prefService.getPref<string>(THEME_ID_PREF).value);
-    assertEquals(
-        prefService.getPref<number>(SYSTEM_THEME_PREF).value,
-        SystemTheme.DEFAULT);
-    // No custom nor system theme in use; "USE CLASSIC" should be hidden.
-    assertFalse(!!appearancePage.shadowRoot.querySelector('#useDefault'));
-    // The color scheme toggle should be visible when the classic theme is used.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    await prefService.setPrefValue(SYSTEM_THEME_PREF, SystemTheme.GTK);
-    await microtasksFinished();
-    // If the system theme is in use, "USE CLASSIC" should show.
-    assertTrue(!!appearancePage.shadowRoot.querySelector('#useDefault'));
-    // The color scheme toggle should be hidden when the GTK theme is used.
-    assertFalse(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    await prefService.setPrefValue(SYSTEM_THEME_PREF, SystemTheme.DEFAULT);
-    await prefService.setPrefValue(THEME_ID_PREF, 'fake theme id');
-    await microtasksFinished();
-
-    // With a custom theme installed, "USE CLASSIC" should show.
-    const button =
-        appearancePage.shadowRoot.querySelector<HTMLElement>('#useDefault');
-    assertTrue(!!button);
-
-    button.click();
-    return appearanceBrowserProxy.whenCalled('useDefaultTheme');
-  });
-
-  test('useGtkThemeLinux', async () => {
-    await colorSchemeHandler.whenCalled('initializeColorSchemeMode');
-
-    assertFalse(!!prefService.getPref<string>(THEME_ID_PREF).value);
-    await prefService.setPrefValue(SYSTEM_THEME_PREF, SystemTheme.GTK);
-    await microtasksFinished();
-    // The "USE GTK+" button shouldn't be showing if it's already in use.
-    assertFalse(!!appearancePage.shadowRoot.querySelector('#useGtk'));
-    // The color scheme toggle should be hidden when the GTK theme is used.
-    assertFalse(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearanceBrowserProxy.setIsChildAccount(true);
-    await prefService.setPrefValue(SYSTEM_THEME_PREF, SystemTheme.DEFAULT);
-    await microtasksFinished();
-    // Child account users have their own theme and can't use GTK+ theme.
-    assertFalse(!!appearancePage.shadowRoot.querySelector('#useDefault'));
-    assertFalse(!!appearancePage.shadowRoot.querySelector('#useGtk'));
-    // If there's no "USE" buttons, the container should be hidden.
-    assertTrue(
-        appearancePage.shadowRoot
-            .querySelector<HTMLElement>('#themesSecondaryActions')!.hidden);
-    // The color scheme toggle should be visible when the classic theme is used,
-    // for child accounts.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    appearanceBrowserProxy.setIsChildAccount(false);
-    await prefService.setPrefValue(THEME_ID_PREF, 'fake theme id');
-    await microtasksFinished();
-    // If there's "USE" buttons again, the container should be visible.
-    assertTrue(!!appearancePage.shadowRoot.querySelector('#useDefault'));
-    assertFalse(
-        appearancePage.shadowRoot
-            .querySelector<HTMLElement>('#themesSecondaryActions')!.hidden);
-    // The color scheme toggle should be visible when a custom theme is used.
-    assertTrue(isVisible(appearancePage.$.colorSchemeModeRow));
-
-    const button =
-        appearancePage.shadowRoot.querySelector<HTMLElement>('#useGtk');
-    assertTrue(!!button);
-
-    button.click();
-    return appearanceBrowserProxy.whenCalled('useGtkTheme');
-  });
-  // </if>
-
-  // <if expr="not is_linux">
   test('useDefaultTheme', async function() {
     assertFalse(!!prefService.getPref<string>(THEME_ID_PREF).value);
     assertFalse(!!appearancePage.shadowRoot.querySelector('#useDefault'));
@@ -316,7 +235,6 @@ suite('AppearancePage', function() {
     button.click();
     return appearanceBrowserProxy.whenCalled('useDefaultTheme');
   });
-  // </if>
 
   test('themeSublabel', async () => {
     const themeRow =
