@@ -1351,6 +1351,13 @@ void GpuDataManagerImplPrivate::UpdateGpuPreferences(
   gpu_preferences->message_pump_type = ui::OzonePlatform::GetInstance()
                                            ->GetPlatformProperties()
                                            .message_pump_type_for_gpu;
+#if BUILDFLAG(IS_LINUX)
+  // On Linux, the GPU sandbox should always be initialized early if the Ozone
+  // backend reports that GPU sandboxing is supported.
+  gpu_preferences->gpu_sandbox_start_early = ui::OzonePlatform::GetInstance()
+                                                 ->GetPlatformProperties()
+                                                 .supports_gpu_sandboxing;
+#endif
 #endif
 
   gpu_preferences->gr_context_type = gpu::GpuModeToGrContextType(gpu_mode_);
