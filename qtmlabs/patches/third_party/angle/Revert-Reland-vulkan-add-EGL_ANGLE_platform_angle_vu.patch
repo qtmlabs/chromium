@@ -1,0 +1,790 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Myrrh Periwinkle <myrrhperiwinkle@qtmlabs.xyz>
+Date: Tue, 17 Jun 2025 10:42:46 +0700
+Subject: Revert "Reland: vulkan: add
+ EGL_ANGLE_platform_angle_vulkan_device_uuid"
+
+This reverts commit 3226a3dfdcc868a9a69a7a94320dbc7829db644c.
+
+diff --git a/extensions/EGL_ANGLE_platform_angle_vulkan_device_uuid.txt b/extensions/EGL_ANGLE_platform_angle_vulkan_device_uuid.txt
+deleted file mode 100644
+index 18ac12e177bcad60bb1b9682122d300558d72e35..0000000000000000000000000000000000000000
+--- a/extensions/EGL_ANGLE_platform_angle_vulkan_device_uuid.txt
++++ /dev/null
+@@ -1,136 +0,0 @@
+-Name
+-
+-    ANGLE_platform_angle_vulkan_device_uuid
+-
+-Name Strings
+-
+-    EGL_ANGLE_platform_angle_vulkan_device_uuid
+-
+-Contributors
+-
+-    Steven Noonan
+-
+-Contacts
+-
+-    Steven Noonan <steven@uplinklabs.net>
+-
+-Status
+-
+-    Draft
+-
+-Version
+-
+-    Version 1, 2024-12-13
+-
+-Number
+-
+-    EGL Extension XXX
+-
+-Extension Type
+-
+-    EGL client extension
+-
+-Dependencies
+-
+-    This extension requires EGL 1.5 and the ANGLE_platform_angle_vulkan
+-    extension.
+-
+-Overview
+-
+-    This extension enables developers to specify additional selection criteria
+-    when creating an ANGLE Vulkan context, ensuring that the context is
+-    associated with a particular physical device and driver combination,
+-    providing more precise control over device selection.
+-
+-New Types
+-
+-    None
+-
+-New Procedures and Functions
+-
+-    None
+-
+-New Tokens
+-
+-    Accepted as an attribute name in the <attrib_list> argument of
+-    eglGetPlatformDisplay:
+-
+-        EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE    0x34F0
+-        EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE    0x34F1
+-        EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE      0x34F2
+-
+-Additions to the EGL Specification
+-
+-    None
+-
+-New Behavior
+-
+-    The EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID attribute may be passed to
+-    eglGetPlatformDisplay to specify the device UUID of the desired Vulkan
+-    device for the ANGLE context. The EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID
+-    attribute may be passed to select a device by its driver's VkDriverId
+-    value.
+-
+-    Attributes introduced by this extension must be used in conjunction with
+-    the EGL_PLATFORM_ANGLE_TYPE_ANGLE attribute set to
+-    EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE. If it is not, eglGetPlatformDisplay
+-    will generate an EGL_BAD_ATTRIBUTE error and return EGL_NO_DISPLAY.
+-
+-    The value provided for EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID must be
+-    a valid pointer to a 16-byte Vulkan device UUID, or a NULL pointer
+-    indicating that any device is acceptable. The UUID value should match the
+-    deviceUUID field of VkPhysicalDeviceIDProperties for a VkPhysicalDevice in
+-    the system.
+-
+-    The value provided for EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID must be
+-    a valid pointer to a 16-byte Vulkan driver UUID, or a NULL pointer
+-    indicating that any driver is acceptable. The UUID value should match the
+-    driverUUID field of VkPhysicalDeviceIDProperties for a VkPhysicalDevice in
+-    the system.
+-
+-    The value provided for EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID must be
+-    a VkDriverId value corresponding to the driverID field of the
+-    VkPhysicalDeviceDriverProperties structure for a device in the system.
+-
+-    If no VkPhysicalDevice is found matching all of the provided search
+-    criteria, the implementation may fall back to any other available
+-    VkPhysicalDevice.
+-
+-Usage Example
+-
+-    // Illustrates using all of the attributes at once
+-    uint8_t deviceUUID[16] = { /* UUID value */ };
+-    uint8_t driverUUID[16] = { /* UUID value */ };
+-    VkDriverId driverId = VK_DRIVER_ID_MESA_HONEYKRISP;
+-
+-    EGLAttrib attribs[] = {
+-        EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE,
+-        EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE, (EGLAttrib)deviceUUID,
+-        EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE, (EGLAttrib)driverUUID,
+-        EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE, (EGLAttrib)driverId,
+-        EGL_NONE
+-    };
+-
+-    EGLDisplay display =
+-        eglGetPlatformDisplay(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, attribs);
+-
+-    if (display == EGL_NO_DISPLAY) {
+-        // Handle display creation failure
+-    }
+-
+-Issues
+-
+-    1) Why provide support for specifying all three of device UUID, driver
+-       UUID, and driver ID?
+-
+-       RESOLVED: The goal is to uniquely identify a specific VkPhysicalDevice
+-       within the system, and systems may have multiple graphics drivers (or
+-       even driver versions) which all support using the same underlying
+-       physical device. The combination of device UUID, driver UUID, and driver
+-       ID is currently found to be sufficient to uniquely identify any
+-       particular driver/device combination found in real-world scenarios.
+-
+-Revision History
+-
+-    Version 1, 2024-07-09 (Steven Noonan)
+-      - Initial draft
+diff --git a/include/EGL/eglext_angle.h b/include/EGL/eglext_angle.h
+index 2fb38ad4eeb3c1ffcffad53969f63ef2b9d2e66b..8d3f3cc886b84b1528cf53a7080fc767d95cc798 100644
+--- a/include/EGL/eglext_angle.h
++++ b/include/EGL/eglext_angle.h
+@@ -107,13 +107,6 @@
+ #define EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE 0x34A5
+ #endif /* EGL_ANGLE_platform_angle_vulkan */
+ 
+-#ifndef EGL_ANGLE_platform_angle_vulkan_device_uuid
+-#define EGL_ANGLE_platform_angle_vulkan_device_uuid 1
+-#define EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE 0x34F0
+-#define EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE 0x34F1
+-#define EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE 0x34F2
+-#endif /* EGL_ANGLE_platform_angle_vulkan_device_uuid */
+-
+ #ifndef EGL_ANGLE_platform_angle_metal
+ #define EGL_ANGLE_platform_angle_metal 1
+ #define EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE 0x3489
+diff --git a/scripts/code_generation_hashes/Extension_files.json b/scripts/code_generation_hashes/Extension_files.json
+index 2f81cef84a38699e55858241f7d83ea9e0519cf3..425199dc9291da5970ad66a4008427b1c944ad5a 100644
+--- a/scripts/code_generation_hashes/Extension_files.json
++++ b/scripts/code_generation_hashes/Extension_files.json
+@@ -2,7 +2,7 @@
+   "doc/ExtensionSupport.md":
+     "2a3cd7639ef7544e90ee7bcc76494486",
+   "scripts/egl_angle_ext.xml":
+-    "8389749098fae1d5c832a06b5be51dc1",
++    "9eb11dfc07e03d4accb96a4514e3519d",
+   "scripts/extension_data/intel_630_linux.json":
+     "3b86832de6a7095f4617e273cba6d45e",
+   "scripts/extension_data/intel_630_win10.json":
+diff --git a/scripts/code_generation_hashes/GL_EGL_WGL_loader.json b/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
+index 36c024e620d5812fedd61f1be9828919faa676ec..31ce458bb223a6a8677ce1f76d3f5fd55bc2dab1 100644
+--- a/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
++++ b/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
+@@ -1,6 +1,6 @@
+ {
+   "scripts/egl_angle_ext.xml":
+-    "8389749098fae1d5c832a06b5be51dc1",
++    "9eb11dfc07e03d4accb96a4514e3519d",
+   "scripts/generate_loader.py":
+     "93c78a8d11323fa311fed5118fbcf083",
+   "scripts/gl_angle_ext.xml":
+diff --git a/scripts/code_generation_hashes/GL_EGL_entry_points.json b/scripts/code_generation_hashes/GL_EGL_entry_points.json
+index d4142ff8e0df1b6d7c9fad609047448228579551..fb8aa9e0d98b9421372c9d2dbdf5a7378c0e2e08 100644
+--- a/scripts/code_generation_hashes/GL_EGL_entry_points.json
++++ b/scripts/code_generation_hashes/GL_EGL_entry_points.json
+@@ -1,6 +1,6 @@
+ {
+   "scripts/egl_angle_ext.xml":
+-    "8389749098fae1d5c832a06b5be51dc1",
++    "9eb11dfc07e03d4accb96a4514e3519d",
+   "scripts/entry_point_packed_egl_enums.json":
+     "a72ae855c6b403912103b519139951a1",
+   "scripts/entry_point_packed_gl_enums.json":
+diff --git a/scripts/code_generation_hashes/interpreter_utils.json b/scripts/code_generation_hashes/interpreter_utils.json
+index cb66f94c7cbbc1c5ffd06147bb38110acb59a62e..e6f1f199f31b825b3022d346b8b163d28be1b93e 100644
+--- a/scripts/code_generation_hashes/interpreter_utils.json
++++ b/scripts/code_generation_hashes/interpreter_utils.json
+@@ -1,6 +1,6 @@
+ {
+   "scripts/egl_angle_ext.xml":
+-    "8389749098fae1d5c832a06b5be51dc1",
++    "9eb11dfc07e03d4accb96a4514e3519d",
+   "scripts/gen_interpreter_utils.py":
+     "c525953cf6fb2294d489e9c22cbabdb8",
+   "scripts/gl_angle_ext.xml":
+diff --git a/scripts/code_generation_hashes/proc_table.json b/scripts/code_generation_hashes/proc_table.json
+index a20612d26fdabf79d1da66592474477145d793d1..17f915bbcc505c9372ed3b925b22af1379be21ab 100644
+--- a/scripts/code_generation_hashes/proc_table.json
++++ b/scripts/code_generation_hashes/proc_table.json
+@@ -1,6 +1,6 @@
+ {
+   "scripts/egl_angle_ext.xml":
+-    "8389749098fae1d5c832a06b5be51dc1",
++    "9eb11dfc07e03d4accb96a4514e3519d",
+   "scripts/gen_proc_table.py":
+     "23ebf460dda78d2c21625e0d41d3cb97",
+   "scripts/gl_angle_ext.xml":
+diff --git a/scripts/egl_angle_ext.xml b/scripts/egl_angle_ext.xml
+index 80fb7df35a2d48f4113c984b0e8b726a1860a187..bb5920c672b12342328d81ff297404dfc8615fa8 100644
+--- a/scripts/egl_angle_ext.xml
++++ b/scripts/egl_angle_ext.xml
+@@ -461,13 +461,6 @@
+                 <enum name="EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE"/>
+             </require>
+         </extension>
+-        <extension name="EGL_ANGLE_platform_angle_vulkan_device_uuid" supported="egl">
+-            <require>
+-                <enum name="EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE"/>
+-                <enum name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE"/>
+-                <enum name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE"/>
+-            </require>
+-        </extension>
+         <extension name="EGL_ANGLE_robust_resource_initialization" supported="egl">
+             <require>
+                 <enum name="EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE"/>
+@@ -658,11 +651,6 @@
+         <enum value="0x34DE" name="EGL_SYNC_GLOBAL_FENCE_ANGLE"/>
+         <enum value="0x34DF" name="EGL_PLATFORM_ANGLE_TYPE_WEBGPU_ANGLE"/>
+     </enums>
+-    <enums namespace="EGL" start="0x34F0" end="0x34FF" vendor="ANGLE">
+-        <enum value="0x34F0" name="EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE"/>
+-        <enum value="0x34F1" name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE"/>
+-        <enum value="0x34F2" name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE"/>
+-    </enums>
+     <enums namespace="EGL" vendor="ANGLE">
+         <enum value="0x0001" name="EGL_LOW_POWER_ANGLE"/>
+         <enum value="0x0002" name="EGL_HIGH_POWER_ANGLE"/>
+diff --git a/src/common/vulkan/vulkan_icd.cpp b/src/common/vulkan/vulkan_icd.cpp
+index dc0c956a74fdf52ed487aef5d147f6c8da319d0f..5be30403cad04b490921bff3041eb5a8a36695af 100644
+--- a/src/common/vulkan/vulkan_icd.cpp
++++ b/src/common/vulkan/vulkan_icd.cpp
+@@ -218,100 +218,52 @@ bool ScopedVkLoaderEnvironment::setICDEnvironment(const char *icd)
+     return mChangedICDEnv;
+ }
+ 
+-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
++void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
+                           const std::vector<VkPhysicalDevice> &physicalDevices,
+                           vk::ICD preferredICD,
+                           uint32_t preferredVendorID,
+                           uint32_t preferredDeviceID,
+-                          const uint8_t *preferredDeviceUUID,
+-                          const uint8_t *preferredDriverUUID,
+-                          VkDriverId preferredDriverID,
+                           VkPhysicalDevice *physicalDeviceOut,
+-                          VkPhysicalDeviceProperties2 *physicalDeviceProperties2Out,
+-                          VkPhysicalDeviceIDProperties *physicalDeviceIDPropertiesOut,
+-                          VkPhysicalDeviceDriverProperties *physicalDeviceDriverPropertiesOut)
++                          VkPhysicalDeviceProperties *physicalDevicePropertiesOut)
+ {
+     ASSERT(!physicalDevices.empty());
+ 
+-    VkPhysicalDeviceProperties const *deviceProps = &physicalDeviceProperties2Out->properties;
+-
+     ICDFilterFunc filter = GetFilterForICD(preferredICD);
+ 
+-    const bool shouldChooseByPciId = (preferredVendorID != 0 || preferredDeviceID != 0);
+-    const bool shouldChooseByUUIDs = (preferredDeviceUUID != nullptr ||
+-                                      preferredDriverUUID != nullptr || preferredDriverID != 0);
++    const bool shouldChooseByID = (preferredVendorID != 0 || preferredDeviceID != 0);
+ 
+     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
+     {
+-        *physicalDeviceProperties2Out       = {};
+-        physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+-        physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+-
+-        *physicalDeviceIDPropertiesOut       = {};
+-        physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+-        physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+-
+-        *physicalDeviceDriverPropertiesOut = {};
+-        physicalDeviceDriverPropertiesOut->sType =
+-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
++        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
+ 
+-        pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+-
+-        if (deviceProps->apiVersion < kMinimumVulkanAPIVersion)
++        if (physicalDevicePropertiesOut->apiVersion < kMinimumVulkanAPIVersion)
+         {
+             // Skip any devices that don't support our minimum API version. This
+             // takes precedence over all other considerations.
+             continue;
+         }
+ 
+-        if (filter(*deviceProps))
++        if (filter(*physicalDevicePropertiesOut))
+         {
+             *physicalDeviceOut = physicalDevice;
+             return;
+         }
+ 
+-        if (shouldChooseByUUIDs)
+-        {
+-            bool matched = true;
+-
+-            if (preferredDriverID != 0 &&
+-                preferredDriverID != physicalDeviceDriverPropertiesOut->driverID)
+-            {
+-                matched = false;
+-            }
+-            else if (preferredDeviceUUID != nullptr &&
+-                     memcmp(preferredDeviceUUID, physicalDeviceIDPropertiesOut->deviceUUID,
+-                            VK_UUID_SIZE) != 0)
+-            {
+-                matched = false;
+-            }
+-            else if (preferredDriverUUID != nullptr &&
+-                     memcmp(preferredDriverUUID, physicalDeviceIDPropertiesOut->driverUUID,
+-                            VK_UUID_SIZE) != 0)
+-            {
+-                matched = false;
+-            }
+-
+-            if (matched)
+-            {
+-                *physicalDeviceOut = physicalDevice;
+-                return;
+-            }
+-        }
+-
+-        if (shouldChooseByPciId)
++        if (shouldChooseByID)
+         {
+             // NOTE: If the system has multiple GPUs with the same vendor and
+             // device IDs, this will arbitrarily select one of them.
+             bool matchVendorID = true;
+             bool matchDeviceID = true;
+ 
+-            if (preferredVendorID != 0 && preferredVendorID != deviceProps->vendorID)
++            if (preferredVendorID != 0 &&
++                preferredVendorID != physicalDevicePropertiesOut->vendorID)
+             {
+                 matchVendorID = false;
+             }
+ 
+-            if (preferredDeviceID != 0 && preferredDeviceID != deviceProps->deviceID)
++            if (preferredDeviceID != 0 &&
++                preferredDeviceID != physicalDevicePropertiesOut->deviceID)
+             {
+                 matchDeviceID = false;
+             }
+@@ -325,27 +277,12 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
+     }
+ 
+     Optional<VkPhysicalDevice> integratedDevice;
+-    VkPhysicalDeviceProperties2 integratedDeviceProperties2;
+-    VkPhysicalDeviceIDProperties integratedDeviceIDProperties;
+-    VkPhysicalDeviceDriverProperties integratedDeviceDriverProperties;
+-
++    VkPhysicalDeviceProperties integratedDeviceProperties;
+     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
+     {
+-        *physicalDeviceProperties2Out       = {};
+-        physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+-        physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+-
+-        *physicalDeviceIDPropertiesOut       = {};
+-        physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+-        physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+-
+-        *physicalDeviceDriverPropertiesOut = {};
+-        physicalDeviceDriverPropertiesOut->sType =
+-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+-
+-        pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
++        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
+ 
+-        if (deviceProps->apiVersion < kMinimumVulkanAPIVersion)
++        if (physicalDevicePropertiesOut->apiVersion < kMinimumVulkanAPIVersion)
+         {
+             // Skip any devices that don't support our minimum API version. This
+             // takes precedence over all other considerations.
+@@ -353,21 +290,16 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
+         }
+ 
+         // If discrete GPU exists, uses it by default.
+-        if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
++        if (physicalDevicePropertiesOut->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+         {
+             *physicalDeviceOut = physicalDevice;
+             return;
+         }
+-        if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
++        if (physicalDevicePropertiesOut->deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
+             !integratedDevice.valid())
+         {
+-            integratedDevice                       = physicalDevice;
+-            integratedDeviceProperties2            = *physicalDeviceProperties2Out;
+-            integratedDeviceIDProperties           = *physicalDeviceIDPropertiesOut;
+-            integratedDeviceDriverProperties       = *physicalDeviceDriverPropertiesOut;
+-            integratedDeviceProperties2.pNext      = nullptr;
+-            integratedDeviceIDProperties.pNext     = nullptr;
+-            integratedDeviceDriverProperties.pNext = nullptr;
++            integratedDevice           = physicalDevice;
++            integratedDeviceProperties = *physicalDevicePropertiesOut;
+             continue;
+         }
+     }
+@@ -375,16 +307,15 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
+     // If only integrated GPU exists, use it by default.
+     if (integratedDevice.valid())
+     {
+-        *physicalDeviceOut             = integratedDevice.value();
+-        *physicalDeviceProperties2Out  = integratedDeviceProperties2;
+-        *physicalDeviceIDPropertiesOut = integratedDeviceIDProperties;
++        *physicalDeviceOut           = integratedDevice.value();
++        *physicalDevicePropertiesOut = integratedDeviceProperties;
+         return;
+     }
+ 
+     WARN() << "Preferred device ICD not found. Using default physicalDevice instead.";
+     // Fallback to the first device.
+     *physicalDeviceOut = physicalDevices[0];
+-    pGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
++    pGetPhysicalDeviceProperties(*physicalDeviceOut, physicalDevicePropertiesOut);
+ }
+ 
+ }  // namespace vk
+diff --git a/src/common/vulkan/vulkan_icd.h b/src/common/vulkan/vulkan_icd.h
+index 0df95c7ecc5e1256ee5aa03a7c9180c3ad7d2c60..d887e15efa82acde28823a4609eff2f5f29e8157 100644
+--- a/src/common/vulkan/vulkan_icd.h
++++ b/src/common/vulkan/vulkan_icd.h
+@@ -61,18 +61,13 @@ class [[nodiscard]] ScopedVkLoaderEnvironment : angle::NonCopyable
+     Optional<std::string> mPreviousNoDeviceSelectEnv;
+ };
+ 
+-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
++void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
+                           const std::vector<VkPhysicalDevice> &physicalDevices,
+                           vk::ICD preferredICD,
+                           uint32_t preferredVendorID,
+                           uint32_t preferredDeviceID,
+-                          const uint8_t *preferredDeviceUUID,
+-                          const uint8_t *preferredDriverUUID,
+-                          VkDriverId preferredDriverID,
+                           VkPhysicalDevice *physicalDeviceOut,
+-                          VkPhysicalDeviceProperties2 *physicalDeviceProperties2Out,
+-                          VkPhysicalDeviceIDProperties *physicalDeviceIDPropertiesOut,
+-                          VkPhysicalDeviceDriverProperties *physicalDeviceDriverPropertiesOut);
++                          VkPhysicalDeviceProperties *physicalDevicePropertiesOut);
+ 
+ }  // namespace vk
+ 
+diff --git a/src/gpu_info_util/SystemInfo.h b/src/gpu_info_util/SystemInfo.h
+index 333ed4341f83d357bd4fab88d495317e20ac2516..24545fe50422506df40ec12c49c679fc79b6c5b3 100644
+--- a/src/gpu_info_util/SystemInfo.h
++++ b/src/gpu_info_util/SystemInfo.h
+@@ -50,8 +50,6 @@ struct GPUDeviceInfo
+     // Fields only available via GetSystemInfoVulkan:
+     std::string deviceName;
+     VersionInfo detailedDriverVersion;
+-    uint8_t deviceUUID[16]    = {};
+-    uint8_t driverUUID[16]    = {};
+     DriverID driverId         = 0;
+     uint32_t driverApiVersion = 0;
+ };
+diff --git a/src/gpu_info_util/SystemInfo_vulkan.cpp b/src/gpu_info_util/SystemInfo_vulkan.cpp
+index 3fb870707d87ab36709ee1c7f7ecfcad4302d2de..63a771a46c9531ed056597a62001240d6bd05985 100644
+--- a/src/gpu_info_util/SystemInfo_vulkan.cpp
++++ b/src/gpu_info_util/SystemInfo_vulkan.cpp
+@@ -512,8 +512,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+     const bool enableValidationLayers = false;
+     vk::ScopedVkLoaderEnvironment scopedEnvironment(enableValidationLayers, preferredICD);
+ 
+-    static_assert(sizeof(GPUDeviceInfo::deviceUUID) == VK_UUID_SIZE);
+-
+     // This implementation builds on top of the Vulkan API, but cannot assume the existence of the
+     // Vulkan library.  ANGLE can be installed on versions of Android as old as Ice Cream Sandwich.
+     // Therefore, we need to use dlopen()/dlsym() in order to see if Vulkan is installed on the
+@@ -550,13 +548,9 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+         VkPhysicalDeviceDriverProperties driverProperties = {};
+         driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+ 
+-        VkPhysicalDeviceIDProperties deviceIDProperties = {};
+-        deviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+-        deviceIDProperties.pNext = &driverProperties;
+-
+         VkPhysicalDeviceProperties2 properties2 = {};
+         properties2.sType                       = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+-        properties2.pNext                       = &deviceIDProperties;
++        properties2.pNext                       = &driverProperties;
+ 
+         VkPhysicalDeviceProperties &properties = properties2.properties;
+         pfnGetPhysicalDeviceProperties(physicalDevices[i], &properties);
+@@ -573,8 +567,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+         gpu.vendorId       = properties.vendorID;
+         gpu.deviceId       = properties.deviceID;
+         gpu.deviceName     = properties.deviceName;
+-        memcpy(gpu.deviceUUID, deviceIDProperties.deviceUUID, VK_UUID_SIZE);
+-        memcpy(gpu.driverUUID, deviceIDProperties.driverUUID, VK_UUID_SIZE);
+ 
+         // TODO(http://anglebug.com/42266143): Use driverID instead of the hardware vendorID to
+         // detect driveVendor, etc.
+diff --git a/src/libANGLE/Caps.cpp b/src/libANGLE/Caps.cpp
+index c7f48e30f4194ecbc2dc7ef322de1bf3d605651c..bad48bb103ec755872db229b639e086b0fd0efca 100644
+--- a/src/libANGLE/Caps.cpp
++++ b/src/libANGLE/Caps.cpp
+@@ -1455,7 +1455,6 @@ std::vector<std::string> ClientExtensions::getStrings() const
+     InsertExtensionString("EGL_ANGLE_platform_angle_null",                    platformANGLENULL,                  &extensionStrings);
+     InsertExtensionString("EGL_ANGLE_platform_angle_webgpu",                  platformANGLEWebgpu,                &extensionStrings);
+     InsertExtensionString("EGL_ANGLE_platform_angle_vulkan",                  platformANGLEVulkan,                &extensionStrings);
+-    InsertExtensionString("EGL_ANGLE_platform_angle_vulkan_device_uuid",      platformANGLEVulkanDeviceUUID,      &extensionStrings);
+     InsertExtensionString("EGL_ANGLE_platform_angle_metal",                   platformANGLEMetal,                 &extensionStrings);
+     InsertExtensionString("EGL_ANGLE_platform_device_context_volatile_cgl",   platformANGLEDeviceContextVolatileCgl, &extensionStrings);
+     InsertExtensionString("EGL_ANGLE_platform_angle_device_id",               platformANGLEDeviceId,              &extensionStrings);
+diff --git a/src/libANGLE/Caps.h b/src/libANGLE/Caps.h
+index 19ac385da1d26bd737be319decfbf5ca5e39265a..2f422277d584d94b731013f84c4eed01fb7ca3b4 100644
+--- a/src/libANGLE/Caps.h
++++ b/src/libANGLE/Caps.h
+@@ -798,9 +798,6 @@ struct ClientExtensions
+     // EGL_ANGLE_platform_angle_vulkan
+     bool platformANGLEVulkan = false;
+ 
+-    // EGL_ANGLE_platform_angle_vulkan_device_uuid
+-    bool platformANGLEVulkanDeviceUUID = false;
+-
+     // EGL_ANGLE_platform_angle_metal
+     bool platformANGLEMetal = false;
+ 
+diff --git a/src/libANGLE/Display.cpp b/src/libANGLE/Display.cpp
+index 8bc7ccc74d44f6810f6e3200a97f8528fad18b5c..41d431c712da8b0c40597a50e6fa48e3bd6505a5 100644
+--- a/src/libANGLE/Display.cpp
++++ b/src/libANGLE/Display.cpp
+@@ -2175,9 +2175,8 @@ static ClientExtensions GenerateClientExtensions()
+ #endif
+ 
+ #if defined(ANGLE_ENABLE_VULKAN)
+-    extensions.platformANGLEVulkan           = true;
+-    extensions.platformANGLEVulkanDeviceUUID = true;
+-    extensions.platformANGLEDeviceId         = true;
++    extensions.platformANGLEVulkan   = true;
++    extensions.platformANGLEDeviceId = true;
+ #endif
+ 
+ #if defined(ANGLE_ENABLE_SWIFTSHADER)
+diff --git a/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp b/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
+index afdde9f6f770cb9f5c95212b67fdd9d20b6b7076..400c9e38e25a39f8887e2c60bf81ee863e5f59d5 100644
+--- a/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
++++ b/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
+@@ -51,9 +51,9 @@ angle::Result CLPlatformVk::initBackendRenderer()
+     featureOverrides.enabled.push_back("hasBlobCacheThatEvictsOldItemsFirst");
+     featureOverrides.disabled.push_back("verifyPipelineCacheInBlobCache");
+ 
+-    ANGLE_TRY(mRenderer->initialize(this, this, angle::vk::ICD::Default, 0, 0, nullptr, nullptr,
+-                                    static_cast<VkDriverId>(0), kUseDebugLayers, getWSIExtension(),
+-                                    getWSILayer(), getWindowSystem(), featureOverrides));
++    ANGLE_TRY(mRenderer->initialize(this, this, angle::vk::ICD::Default, 0, 0, kUseDebugLayers,
++                                    getWSIExtension(), getWSILayer(), getWindowSystem(),
++                                    featureOverrides));
+ 
+     return angle::Result::Continue;
+ }
+diff --git a/src/libANGLE/renderer/vulkan/DisplayVk.cpp b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
+index 4724573b4d0c853e7fc6a4c7ff02473c042d4cee..89ced189ca1404cfddd3041ba6d21743a7642c4b 100644
+--- a/src/libANGLE/renderer/vulkan/DisplayVk.cpp
++++ b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
+@@ -174,17 +174,10 @@ egl::Error DisplayVk::initialize(egl::Display *display)
+         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE, 0));
+     const uint32_t preferredDeviceId =
+         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_LOW_ANGLE, 0));
+-    const uint8_t *preferredDeviceUuid = reinterpret_cast<const uint8_t *>(
+-        attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE, 0));
+-    const uint8_t *preferredDriverUuid = reinterpret_cast<const uint8_t *>(
+-        attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE, 0));
+-    const VkDriverId preferredDriverId =
+-        static_cast<VkDriverId>(attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE, 0));
+ 
+     angle::Result result = mRenderer->initialize(
+-        this, this, desiredICD, preferredVendorId, preferredDeviceId, preferredDeviceUuid,
+-        preferredDriverUuid, preferredDriverId, useDebugLayers, getWSIExtension(), getWSILayer(),
+-        getWindowSystem(), mState.featureOverrides);
++        this, this, desiredICD, preferredVendorId, preferredDeviceId, useDebugLayers,
++        getWSIExtension(), getWSILayer(), getWindowSystem(), mState.featureOverrides);
+     ANGLE_TRY(angle::ToEGL(result, EGL_NOT_INITIALIZED));
+ 
+     mDeviceQueueIndex = mRenderer->getDeviceQueueIndex(egl::ContextPriority::Medium);
+diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.cpp b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
+index bd9d15720e41c06304e4ba25673ab02407a826ba..7acd759572b30afe48f218744f84a23345121f09 100644
+--- a/src/libANGLE/renderer/vulkan/vk_renderer.cpp
++++ b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
+@@ -1888,7 +1888,6 @@ Renderer::Renderer()
+       mEnabledICD(angle::vk::ICD::Default),
+       mDebugUtilsMessenger(VK_NULL_HANDLE),
+       mPhysicalDevice(VK_NULL_HANDLE),
+-      mPhysicalDeviceProperties(mPhysicalDeviceProperties2.properties),
+       mCurrentQueueFamilyIndex(std::numeric_limits<uint32_t>::max()),
+       mMaxVertexAttribDivisor(1),
+       mMaxVertexAttribStride(0),
+@@ -2216,9 +2215,6 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+                                    angle::vk::ICD desiredICD,
+                                    uint32_t preferredVendorId,
+                                    uint32_t preferredDeviceId,
+-                                   const uint8_t *preferredDeviceUuid,
+-                                   const uint8_t *preferredDriverUuid,
+-                                   VkDriverId preferredDriverId,
+                                    UseDebugLayers useDebugLayers,
+                                    const char *wsiExtension,
+                                    const char *wsiLayer,
+@@ -2442,14 +2438,13 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+     ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount, nullptr));
+     ANGLE_VK_CHECK(context, physicalDeviceCount > 0, VK_ERROR_INITIALIZATION_FAILED);
+ 
++    // TODO(jmadill): Handle multiple physical devices. For now, use the first device.
+     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
+     ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount,
+                                                      physicalDevices.data()));
+-    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties2, physicalDevices, mEnabledICD,
+-                         preferredVendorId, preferredDeviceId, preferredDeviceUuid,
+-                         preferredDriverUuid, preferredDriverId, &mPhysicalDevice,
+-                         &mPhysicalDeviceProperties2, &mPhysicalDeviceIDProperties,
+-                         &mDriverProperties);
++    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, physicalDevices, mEnabledICD,
++                         preferredVendorId, preferredDeviceId, &mPhysicalDevice,
++                         &mPhysicalDeviceProperties);
+ 
+     // The device version that is assumed by ANGLE is the minimum of the actual device version and
+     // the highest it's allowed to use.
+@@ -3110,6 +3105,12 @@ void Renderer::appendDeviceExtensionFeaturesPromotedTo13(
+ void Renderer::queryDeviceExtensionFeatures(const vk::ExtensionNameList &deviceExtensionNames)
+ {
+     // Default initialize all extension features to false.
++    mPhysicalDevice11Properties       = {};
++    mPhysicalDevice11Properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
++
++    mPhysicalDevice11Features       = {};
++    mPhysicalDevice11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
++
+     mLineRasterizationFeatures = {};
+     mLineRasterizationFeatures.sType =
+         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT;
+@@ -3360,6 +3361,8 @@ void Renderer::queryDeviceExtensionFeatures(const vk::ExtensionNameList &deviceE
+     vkGetPhysicalDeviceProperties2(mPhysicalDevice, &deviceProperties);
+ 
+     // Clean up pNext chains
++    mPhysicalDevice11Properties.pNext                 = nullptr;
++    mPhysicalDevice11Features.pNext                   = nullptr;
+     mLineRasterizationFeatures.pNext                  = nullptr;
+     mMemoryReportFeatures.pNext                       = nullptr;
+     mProvokingVertexFeatures.pNext                    = nullptr;
+@@ -3788,8 +3791,16 @@ void Renderer::enableDeviceExtensionsPromotedTo11(const vk::ExtensionNameList &d
+ {
+     // OVR_multiview disallows multiview with geometry and tessellation, so don't request these
+     // features.
+-    mMultiviewFeatures.multiviewGeometryShader     = VK_FALSE;
+-    mMultiviewFeatures.multiviewTessellationShader = VK_FALSE;
++    mMultiviewFeatures.multiviewGeometryShader            = VK_FALSE;
++    mMultiviewFeatures.multiviewTessellationShader        = VK_FALSE;
++    mPhysicalDevice11Features.multiviewGeometryShader     = VK_FALSE;
++    mPhysicalDevice11Features.multiviewTessellationShader = VK_FALSE;
++
++    // Disable protected memory if not needed as it can introduce overhead
++    if (!mFeatures.supportsProtectedMemory.enabled)
++    {
++        mPhysicalDevice11Features.protectedMemory = VK_FALSE;
++    }
+ 
+     if (mFeatures.supportsMultiview.enabled)
+     {
+diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.h b/src/libANGLE/renderer/vulkan/vk_renderer.h
+index 811607285e57221e602a19527c2aab0ae4be1a95..674d6a2122f3d36f0e8d0e1c04d637ed37e20162 100644
+--- a/src/libANGLE/renderer/vulkan/vk_renderer.h
++++ b/src/libANGLE/renderer/vulkan/vk_renderer.h
+@@ -149,9 +149,6 @@ class Renderer : angle::NonCopyable
+                              angle::vk::ICD desiredICD,
+                              uint32_t preferredVendorId,
+                              uint32_t preferredDeviceId,
+-                             const uint8_t *preferredDeviceUuid,
+-                             const uint8_t *preferredDriverUuid,
+-                             VkDriverId preferredDriverId,
+                              UseDebugLayers useDebugLayers,
+                              const char *wsiExtension,
+                              const char *wsiLayer,
+@@ -822,11 +819,12 @@ class Renderer : angle::NonCopyable
+     VkDebugUtilsMessengerEXT mDebugUtilsMessenger;
+     VkPhysicalDevice mPhysicalDevice;
+ 
+-    VkPhysicalDeviceProperties2 mPhysicalDeviceProperties2;
+-    VkPhysicalDeviceProperties &mPhysicalDeviceProperties;
++    VkPhysicalDeviceProperties mPhysicalDeviceProperties;
++    VkPhysicalDeviceVulkan11Properties mPhysicalDevice11Properties;
+ 
+-    VkPhysicalDeviceIDProperties mPhysicalDeviceIDProperties;
+     VkPhysicalDeviceFeatures mPhysicalDeviceFeatures;
++    VkPhysicalDeviceVulkan11Features mPhysicalDevice11Features;
++
+     VkPhysicalDeviceLineRasterizationFeaturesEXT mLineRasterizationFeatures;
+     VkPhysicalDeviceProvokingVertexFeaturesEXT mProvokingVertexFeatures;
+     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT mVertexAttributeDivisorFeatures;
+diff --git a/src/libANGLE/validationEGL.cpp b/src/libANGLE/validationEGL.cpp
+index d1bc7fcd98951fe1e23a43440776665534bf6c6d..f1c195e96d0024dfe332e1543774b983e3055b01 100644
+--- a/src/libANGLE/validationEGL.cpp
++++ b/src/libANGLE/validationEGL.cpp
+@@ -691,7 +691,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
+         bool presentPathSpecified    = false;
+         bool luidSpecified           = false;
+         bool deviceIdSpecified       = false;
+-        bool vkDeviceUuidSpecified   = false;
+ 
+         Optional<EGLAttrib> majorVersion;
+         Optional<EGLAttrib> minorVersion;
+@@ -857,13 +856,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
+                 case EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE:
+                     luidSpecified = true;
+                     break;
+-
+-                case EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE:
+-                case EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE:
+-                case EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE:
+-                    vkDeviceUuidSpecified = true;
+-                    break;
+-
+                 case EGL_PLATFORM_ANGLE_DEVICE_CONTEXT_VOLATILE_CGL_ANGLE:
+                     // The property does not have an effect if it's not active, so do not check
+                     // for non-support.
+@@ -1003,20 +995,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
+             }
+         }
+ 
+-        if (vkDeviceUuidSpecified)
+-        {
+-            if (platformType != EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE)
+-            {
+-                val->setError(EGL_BAD_ATTRIBUTE,
+-                              "EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID, "
+-                              "EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID and "
+-                              "EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID "
+-                              "require a platform type of "
+-                              "EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE.");
+-                return false;
+-            }
+-        }
+-
+         if (deviceIdSpecified)
+         {
+             if (attribMap.get(EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE, 0) == 0 &&
+diff --git a/src/tests/test_utils/VulkanHelper.cpp b/src/tests/test_utils/VulkanHelper.cpp
+index 249e41730b5f2d1d100f3bd16462eb7b324ded99..08024214d16897df9d6fc945b0a259aaec4f3691 100644
+--- a/src/tests/test_utils/VulkanHelper.cpp
++++ b/src/tests/test_utils/VulkanHelper.cpp
+@@ -256,13 +256,9 @@ void VulkanHelper::initialize(bool useSwiftshader, bool enableValidationLayers)
+ 
+     ASSERT(physicalDevices.size() > 0);
+ 
+-    VkPhysicalDeviceProperties2 physicalDeviceProperties2;
+-    VkPhysicalDeviceIDProperties physicalDeviceIDProperties;
+-    VkPhysicalDeviceDriverProperties driverProperties;
+-    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties2, physicalDevices, icd, 0, 0, nullptr,
+-                         nullptr, static_cast<VkDriverId>(0), &mPhysicalDevice,
+-                         &physicalDeviceProperties2, &physicalDeviceIDProperties,
+-                         &driverProperties);
++    VkPhysicalDeviceProperties physicalDeviceProperties;
++    ChoosePhysicalDevice(vkGetPhysicalDeviceProperties, physicalDevices, icd, 0, 0,
++                         &mPhysicalDevice, &physicalDeviceProperties);
+ 
+     vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &mMemoryProperties);
+ 

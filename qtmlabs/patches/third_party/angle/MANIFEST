@@ -1,0 +1,8 @@
+Revert-Reland-vulkan-add-EGL_ANGLE_platform_angle_vu.patch
+Revert-Add-a-missing-include.patch
+Revert-egl-Add-logic-to-select-preferred-display.patch
+gpu_info_util-Use-libdrm-to-discover-GPUs-on-desktop.patch
+Implement-EGL_ANGLE_platform_angle_device_id-on-Linu.patch
+Support-more-native-platform-types-in-the-EGL-backen.patch
+Disable-custom-Vulkan-loader-on-Linux.patch
+vulkan-Retry-with-immutable-format-before-removing-u.patch
