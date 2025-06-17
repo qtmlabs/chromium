@@ -357,6 +357,10 @@ class OzonePlatformWayland : public OzonePlatform,
       // API is implemented.
       properties->supports_color_picker_dialog = false;
 
+      // The GPU process on Ozone/Wayland does not need to connect to a display
+      // server to function, so enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
+
       initialised = true;
     }
 

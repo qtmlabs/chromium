@@ -113,6 +113,9 @@ class OzonePlatformHeadlessImpl : public OzonePlatformHeadless {
     static base::NoDestructor<OzonePlatform::PlatformProperties> properties;
     static bool initialized = false;
     if (!initialized) {
+      // The GPU process on Ozone/Headless doesn't need a display server, so
+      // enable GPU sandboxing.
+      properties->supports_gpu_sandboxing = true;
       initialized = true;
     }
     return *properties;
