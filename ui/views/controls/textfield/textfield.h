@@ -380,6 +380,8 @@ class VIEWS_EXPORT Textfield : public View,
   // TextfieldModel::Delegate overrides:
   void OnCompositionTextConfirmedOrCleared() override;
   void OnTextChanged() override;
+  void AdjustTextForCutOrCopy(std::u16string& selected_text) override;
+  bool ShouldMarkAsOffTheRecord() override;
 
   // ContextMenuController overrides:
   void ShowContextMenuForViewImpl(
