@@ -262,6 +262,9 @@ EGLConfig ChooseConfig(EGLDisplay display,
         }
       }
     }
+    if (!config) {
+      config = matching_configs[0];
+    }
     return config;
   }
 
