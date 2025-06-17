@@ -552,17 +552,7 @@ void AddAppearanceStrings(content::WebUIDataSource* html_source,
       {"uiFeatureAlignSide", IDS_SETTINGS_UI_FEATURE_ALIGN_SIDE},
       {"uiFeatureAlignTop", IDS_SETTINGS_UI_FEATURE_ALIGN_TOP},
       {"resetToDefault", IDS_SETTINGS_RESET_TO_DEFAULT},
-#if BUILDFLAG(IS_LINUX)
-      {"gtkTheme", IDS_SETTINGS_GTK_THEME},
-      {"useGtkTheme", IDS_SETTINGS_USE_GTK_THEME},
-      {"qtTheme", IDS_SETTINGS_QT_THEME},
-      {"useQtTheme", IDS_SETTINGS_USE_QT_THEME},
-      {"classicTheme", IDS_SETTINGS_CLASSIC_THEME},
-      {"useClassicTheme", IDS_SETTINGS_USE_CLASSIC_THEME},
-#endif
-#if !BUILDFLAG(IS_LINUX)
       {"resetToDefaultTheme", IDS_SETTINGS_RESET_TO_DEFAULT_THEME},
-#endif
       {"resetToolbarToDefault", IDS_SETTINGS_RESET_TOOLBAR_TO_DEFAULT},
 #if BUILDFLAG(IS_LINUX)
       {"showWindowDecorations", IDS_SHOW_WINDOW_DECORATIONS},

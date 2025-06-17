@@ -76,10 +76,6 @@ export interface SettingsAppearancePageElement {
 export enum SystemTheme {
   // Either classic or web theme.
   DEFAULT = 0,
-  // <if expr="is_linux">
-  GTK = 1,
-  QT = 2,
-  // </if>
 }
 
 const SettingsAppearancePageElementBase =
@@ -283,9 +279,6 @@ export class SettingsAppearancePageElement extends
           'prefs.extensions.theme.id.value, systemTheme_, isForcedTheme_)',
       'updateShowTabSearchRestartButton_(' +
           'prefs.tab_search.is_right_aligned.value)',
-      // <if expr="is_linux">
-      'systemThemePrefChanged_(prefs.extensions.theme.system_theme.value)',
-      // </if>
       'toolbarPinningStateChanged_(prefs.toolbar.pinned_actions.value,' +
           'prefs.browser.show_home_button.value,' +
           'prefs.browser.show_forward_button.value)',
@@ -420,60 +413,6 @@ export class SettingsAppearancePageElement extends
     this.appearanceBrowserProxy_.resetPinnedToolbarActions();
   }
 
-  // <if expr="is_linux">
-  private systemThemePrefChanged_(systemTheme: SystemTheme) {
-    this.systemTheme_ = systemTheme;
-  }
-
-  /** @return Whether to show the "USE CLASSIC" button. */
-  private showUseClassic_(themeId: string): boolean {
-    return !!themeId || this.systemTheme_ !== SystemTheme.DEFAULT;
-  }
-
-  /** @return Whether to show the "USE GTK" button. */
-  private showUseGtk_(themeId: string): boolean {
-    return (!!themeId || this.systemTheme_ !== SystemTheme.GTK) &&
-        !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  /** @return Whether to show the "USE QT" button. */
-  private showUseQt_(themeId: string): boolean {
-    return (!!themeId || this.systemTheme_ !== SystemTheme.QT) &&
-        !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  /**
-   * @return Whether to show the secondary area where "USE CLASSIC",
-   *     "USE GTK", and "USE QT" buttons live.
-   */
-  private showThemesSecondary_(themeId: string): boolean {
-    return !!themeId || !this.appearanceBrowserProxy_.isChildAccount();
-  }
-
-  private onUseGtkClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useGtkTheme();
-  }
-
-  private onUseQtClick_() {
-    if (this.isForcedTheme_) {
-      this.showManagedThemeDialog_ = true;
-      return;
-    }
-    this.appearanceBrowserProxy_.useQtTheme();
-  }
-
-  /** @return Whether to show the color scheme mode toggle. */
-  private showColorSchemeMode_(themeId: string): boolean {
-    return !!themeId ||
-        this.systemTheme_ !== SystemTheme.GTK &&
-        this.systemTheme_ !== SystemTheme.QT;
-  }
-  // </if>
-
   private themeChanged_(themeId: string) {
     if (this.prefs === undefined || this.systemTheme_ === undefined) {
       return;
@@ -498,24 +437,7 @@ export class SettingsAppearancePageElement extends
       return;
     }
 
-    // <if expr="is_linux">
-    let i18nId: string;
-    switch (this.systemTheme_) {
-      case SystemTheme.GTK:
-        i18nId = 'gtkTheme';
-        break;
-      case SystemTheme.QT:
-        i18nId = 'qtTheme';
-        break;
-      default:
-        i18nId = 'classicTheme';
-        break;
-    }
-    this.themeSublabel_ = this.i18n(i18nId);
-    // </if>
-    // <if expr="not is_linux">
-      this.themeSublabel_ = '';
-    // </if>
+    this.themeSublabel_ = '';
   }
 
   /** @return Whether applied theme is set by policy. */
