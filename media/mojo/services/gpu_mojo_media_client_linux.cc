@@ -21,7 +21,7 @@ namespace media {
 namespace {
 
 BASE_FEATURE(kAcceleratedVideoDecodeLinuxZeroCopyGL,
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kRenderableMM21,
              "RenderableMM21",
