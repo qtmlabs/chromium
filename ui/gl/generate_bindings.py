@@ -2626,6 +2626,7 @@ EGL_CLIENT_EXTENSIONS_EXTRA = [
   'EGL_EXT_platform_base',
   'EGL_EXT_platform_device',
   'EGL_KHR_platform_gbm',
+  'EGL_EXT_platform_wayland',
   'EGL_MESA_platform_surfaceless',
 ]
 
