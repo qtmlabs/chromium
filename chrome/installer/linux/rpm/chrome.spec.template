@@ -17,8 +17,8 @@ Packager        : @@MAINTNAME <@@MAINTMAIL>
 
 Provides        : @@rpm_provides = %{version}
 Requires        : @@rpm_depends
-Requires(post)  : %{_sbindir}/update-alternatives
-Requires(preun) : %{_sbindir}/update-alternatives
+Requires(post)  : /usr/sbin/update-alternatives
+Requires(preun) : /usr/sbin/update-alternatives
 Autoreqprov     : No
 
 BuildRoot       : %{_tmppath}/%{name}-%{version}-root
@@ -163,7 +163,7 @@ case $CHANNEL in
     ;;
 esac
 
-%{_sbindir}/update-alternatives --install /usr/bin/@@package_orig \
+/usr/sbin/update-alternatives --install /usr/bin/@@package_orig \
   @@package_orig /usr/bin/@@usr_bin_symlink_name $PRIORITY
 
 exit 0
@@ -191,7 +191,7 @@ if [ "$mode" = "uninstall" ]; then
   remove_nss_symlinks
   remove_udev_symlinks
 
-  %{_sbindir}/update-alternatives --remove @@package_orig \
+  /usr/sbin/update-alternatives --remove @@package_orig \
     /usr/bin/@@usr_bin_symlink_name
 fi
 
