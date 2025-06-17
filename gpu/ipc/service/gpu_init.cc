@@ -890,10 +890,13 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
     watchdog_init.SetGpuWatchdogPtr(watchdog_thread_.get());
   }
 
+  // On Linux, the GPU sandbox is either started early or not at all.
+#if !BUILDFLAG(IS_LINUX)
   if (!gpu_info_.sandboxed && !attempted_startsandbox) {
     gpu_info_.sandboxed = sandbox_helper_->EnsureSandboxInitialized(
         watchdog_thread_.get(), &gpu_info_, gpu_preferences_);
   }
+#endif
 
   InitializeDawnProcs();
 
