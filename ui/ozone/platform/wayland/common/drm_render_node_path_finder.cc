@@ -6,6 +6,7 @@
 
 #include <fcntl.h>
 #include <gbm.h>
+#include <sys/sysmacros.h>
 #include <xf86drm.h>
 
 #include <string>
@@ -15,8 +16,10 @@
 #include "base/compiler_specific.h"
 #include "base/files/scoped_file.h"
 #include "base/logging.h"
+#include "base/strings/stringprintf.h"
 #include "base/trace_event/trace_event.h"
 #include "ui/gfx/linux/scoped_gbm_device.h"  // nogncheck
+#include "ui/gl/gl_display_manager.h"
 #include "ui/ozone/public/ozone_switches.h"
 
 namespace ui {
@@ -38,6 +41,25 @@ void DrmRenderNodePathFinder::FindDrmRenderNodePath() {
         base::CommandLine::ForCurrentProcess()->GetSwitchValuePath(
             switches::kRenderNodeOverride);
     return;
+  }
+
+  dev_t system_device_id = static_cast<dev_t>(
+      gl::GLDisplayManagerEGL::GetInstance()->GetSystemDeviceId(
+          gl::GpuPreference::kDefault));
+  if (system_device_id != 0) {
+    // If GPU info discovery selected a specific render node, try using that
+    // first.
+    std::string dri_render_node(
+        base::StringPrintf("/dev/dri/renderD%u", minor(system_device_id)));
+    base::ScopedFD drm_fd(open(dri_render_node.c_str(), O_RDWR));
+    if (drm_fd.get() >= 0) {
+      // Check if GBM actually supports the device.
+      ScopedGbmDevice device(gbm_create_device(drm_fd.get()));
+      if (device) {
+        drm_render_node_path_ = base::FilePath(dri_render_node);
+        return;
+      }
+    }
   }
 
   int max_devices = drmGetDevices2(0, nullptr, 0);
