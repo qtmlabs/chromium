@@ -55,4 +55,8 @@ bool TextfieldController::OnBeforePaste(Textfield* sender,
   return false;
 }
 
+bool TextfieldController::ShouldMarkAsOffTheRecord() {
+  return false;
+}
+
 }  // namespace views
