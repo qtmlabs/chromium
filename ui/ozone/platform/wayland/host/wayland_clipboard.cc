@@ -159,6 +159,9 @@ class ClipboardImpl final : public Clipboard, public DataSource::Delegate {
       offered_data_.clear();
       source_.reset();
     } else {
+      // Don't destroy the current source before the new source is ready.
+      auto old_source = std::move(source_);
+
       offered_data_ = *data;
       FinishWrite(GetSerial());
     }
