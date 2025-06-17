@@ -58,6 +58,12 @@ class VIEWS_EXPORT TextfieldModel {
     // Called any time that the text property is modified in TextfieldModel
     virtual void OnTextChanged() {}
 
+    // Allow the delegate to change what's actually written to the clipboard.
+    virtual void AdjustTextForCutOrCopy(std::u16string& selected_text) {}
+
+    // Data is copied from an incognito window.
+    virtual bool ShouldMarkAsOffTheRecord();
+
    protected:
     virtual ~Delegate();
   };
