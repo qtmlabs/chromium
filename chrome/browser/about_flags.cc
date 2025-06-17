@@ -12688,6 +12688,15 @@ const FeatureEntry kFeatureEntries[] = {
      FEATURE_WITH_PARAMS_VALUE_TYPE(features::kPageActionsMigration,
                                     kPageActionsMigrationVariations,
                                     "PageActionsMigration")},
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+    {"vulkan-force-ycbcr-linear-sampling",
+     flag_descriptions::kVulkanForceYCbCrLinearSamplingName,
+     flag_descriptions::kVulkanForceYCbCrLinearSamplingDescription,
+     kOsLinux | kOsCrOS,
+     SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)},
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
     // Add new entries above this line.
 
     // NOTE: Adding a new flag requires adding a corresponding entry to enum
