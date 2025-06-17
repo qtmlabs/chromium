@@ -358,13 +358,6 @@ class Installer:
                     mode=self.shlib_perms,
                 )
 
-        if (self.output_dir / "libvulkan.so.1").exists():
-            self._install(
-                self.output_dir / "libvulkan.so.1.stripped",
-                install_dir / "libvulkan.so.1",
-                mode=self.shlib_perms,
-            )
-
         if (self.output_dir / "libvk_swiftshader.so").exists():
             self._install(
                 self.output_dir / "libvk_swiftshader.so.stripped",
