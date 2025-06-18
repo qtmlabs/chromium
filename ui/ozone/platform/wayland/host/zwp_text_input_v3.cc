@@ -145,8 +145,6 @@ ZwpTextInputV3Impl::ZwpTextInputV3Impl(
 ZwpTextInputV3Impl::~ZwpTextInputV3Impl() = default;
 
 void ZwpTextInputV3Impl::Reset() {
-  // Clear last committed values.
-  committed_ime_data_.Reset();
   // There is no explicit reset API in v3. See [1].
   // Disable+enable to force a reset has been discussed as a possible solution.
   // But this is not implemented yet in compositors. In fact, it was seen in
@@ -158,15 +156,8 @@ void ZwpTextInputV3Impl::Reset() {
   // side by clicking in the input field. So the logic below is still needed
   // until a proper fix is in place.
   //
-  // Even though chromium expects only preedit to be reset, the surrounding text
-  // in fact could change along with reset being called if composition was
-  // canceled internally. So we shouldn't keep old surrounding text anyway. See
-  // related crbug.com/353915732 where surrounding text update is not sent after
-  // reset when composition is canceled.
-  //
   // [1]
   // https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/34
-  pending_ime_data_.Reset();
   pending_input_events_.Reset();
   applied_input_events_.Reset();
 }
