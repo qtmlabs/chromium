@@ -405,6 +405,10 @@ void ZwpTextInputV3Impl::OnDone(void* data,
   CHECK(preedit_data);
   const auto& delete_surrounding_text =
       self->pending_input_events_.delete_surrounding_text;
+  // Commit will reset the preedit string, in which case we should skip updating
+  // the preedit if it's empty
+  bool skip_preedit_update =
+      !commit_string.empty() && preedit_data->text.empty();
   if (surrounding_text && delete_surrounding_text &&
       surrounding_text->delete_around_range.IsValid()) {
     // Delete surrounding text.
@@ -474,7 +478,9 @@ void ZwpTextInputV3Impl::OnDone(void* data,
   CHECK(self->applied_input_events_.preedit);
   if (*self->applied_input_events_.preedit !=
       *self->pending_input_events_.preedit) {
-    self->client_->OnPreeditString(preedit_data->text, {}, preedit_cursor);
+    if (!skip_preedit_update) {
+      self->client_->OnPreeditString(preedit_data->text, {}, preedit_cursor);
+    }
     self->applied_input_events_.preedit =
         std::move(self->pending_input_events_.preedit);
   }
