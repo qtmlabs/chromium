@@ -260,7 +260,7 @@ FontRenderParams GetFontRenderParams(const FontRenderParamsQuery& query,
                  actual_query.device_scale_factor) >
         std::numeric_limits<float>::epsilon();
 #else
-    params.subpixel_positioning = actual_query.device_scale_factor > 1.0f;
+    params.subpixel_positioning = true;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
     // To enable subpixel positioning, we need to disable hinting.
