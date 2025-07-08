@@ -12,6 +12,7 @@
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
+#include "build/branding_buildflags.h"
 #include "components/dbus/thread_linux/dbus_thread_linux.h"
 #include "components/dbus/xdg/portal.h"
 #include "dbus/bus.h"
@@ -100,6 +101,7 @@ void PowerMonitorDeviceSourceLinux::OnSignalConnected(
     const std::string& signal_name,
     bool connected) {
   if (connected) {
+    AcquireDelayInhibitor();
     return;
   }
 
@@ -113,8 +115,49 @@ void PowerMonitorDeviceSourceLinux::OnPrepareForSleep(dbus::Signal* signal) {
     DLOG(ERROR) << "Received malformed PrepareForSleep signal from systemd";
   } else if (start) {
     ProcessPowerEvent(SUSPEND_EVENT);
+    inhibitor_fd_.reset();
   } else {
     ProcessPowerEvent(RESUME_EVENT);
+    AcquireDelayInhibitor();
+  }
+}
+
+void PowerMonitorDeviceSourceLinux::AcquireDelayInhibitor() {
+  dbus::MethodCall method_call("org.freedesktop.login1.Manager", "Inhibit");
+  dbus::MessageWriter writer(&method_call);
+
+  // What (operation to be inhibited)
+  writer.AppendString("sleep");
+  // Who (name of application requesting inhibition)
+#if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+  writer.AppendString("Google Chrome");
+#else
+  writer.AppendString("Chromium");
+#endif
+  // Why (reason for inhibition - we can't provide one since it can be
+  // anything)
+  writer.AppendString("");
+  // Mode (what kind of inhibitor)
+  writer.AppendString("delay");
+
+  system_bus_
+      ->GetObjectProxy("org.freedesktop.login1",
+                       dbus::ObjectPath("/org/freedesktop/login1"))
+      ->CallMethod(
+          &method_call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
+          base::BindOnce(&PowerMonitorDeviceSourceLinux::OnInhibitResponse,
+                         weak_ptr_factory_.GetWeakPtr()));
+}
+
+void PowerMonitorDeviceSourceLinux::OnInhibitResponse(
+    dbus::Response* response) {
+  if (!response) {
+    LOG(ERROR) << "Failed to acquire sleep delay inhibitor";
+  }
+
+  dbus::MessageReader reader(response);
+  if (!reader.PopFileDescriptor(&inhibitor_fd_)) {
+    LOG(ERROR) << "Failed to read file descriptor of sleep delay inhibitor";
   }
 }
 
