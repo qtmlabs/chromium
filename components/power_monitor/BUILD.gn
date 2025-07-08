@@ -16,6 +16,7 @@ source_set("power_monitor") {
       "power_monitor_device_source_linux.cc",
     ]
     deps += [
+      "//build:branding_buildflags",
       "//components/dbus",
       "//dbus",
     ]

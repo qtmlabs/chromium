@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "base/files/scoped_file.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -18,6 +19,7 @@ namespace dbus {
 class Bus;
 class ObjectProxy;
 class Signal;
+class Response;
 }  // namespace dbus
 
 // A PowerMonitorSource that observes sleep/resume signals issued by systemd
@@ -47,11 +49,14 @@ class PowerMonitorDeviceSourceLinux : public base::PowerMonitorSource {
   void OnPropertiesChanged(
       dbus_utils::ConnectToSignalResultSig<"sa{sv}as"> result);
   void SetPowerSaverEnabled(bool enabled);
+  void AcquireDelayInhibitor();
+  void OnInhibitResponse(dbus::Response* response);
 
   scoped_refptr<dbus::Bus> system_bus_;
   scoped_refptr<dbus::Bus> session_bus_;
   raw_ptr<dbus::ObjectProxy> portal_proxy_ = nullptr;
   bool power_saver_enabled_ = false;
+  base::ScopedFD inhibitor_fd_;
 
   base::WeakPtrFactory<PowerMonitorDeviceSourceLinux> weak_ptr_factory_{this};
 };
