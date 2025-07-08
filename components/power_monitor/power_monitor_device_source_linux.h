@@ -5,15 +5,17 @@
 #ifndef COMPONENTS_POWER_MONITOR_POWER_MONITOR_DEVICE_SOURCE_LINUX_H_
 #define COMPONENTS_POWER_MONITOR_POWER_MONITOR_DEVICE_SOURCE_LINUX_H_
 
+#include <string>
+
+#include "base/files/scoped_file.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/power_monitor/power_monitor_source.h"
 
-#include <string>
-
 namespace dbus {
 class Bus;
 class Signal;
+class Response;
 }  // namespace dbus
 
 // A PowerMonitorSource that observes sleep/resume signals issued by systemd on
@@ -35,8 +37,11 @@ class PowerMonitorDeviceSourceLinux : public base::PowerMonitorSource {
                          const std::string& signal_name,
                          bool connected);
   void OnPrepareForSleep(dbus::Signal* signal);
+  void AcquireDelayInhibitor();
+  void OnInhibitResponse(dbus::Response* response);
 
   scoped_refptr<dbus::Bus> bus_;
+  base::ScopedFD inhibitor_fd_;
   base::WeakPtrFactory<PowerMonitorDeviceSourceLinux> weak_ptr_factory_{this};
 };
 
