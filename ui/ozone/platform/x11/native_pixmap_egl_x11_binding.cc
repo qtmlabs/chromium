@@ -5,7 +5,6 @@
 #include "ui/ozone/platform/x11/native_pixmap_egl_x11_binding.h"
 
 #include <GL/gl.h>
-
 #include <unistd.h>
 
 #include "base/logging.h"
@@ -16,6 +15,7 @@
 #include "ui/gfx/x/dri3.h"
 #include "ui/gfx/x/future.h"
 #include "ui/gl/gl_bindings.h"
+#include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/scoped_binders.h"
 
 namespace gl {
@@ -103,11 +103,6 @@ x11::Pixmap XPixmapFromNativePixmap(const gfx::NativePixmap& native_pixmap) {
   return pixmap_id;
 }
 
-inline EGLDisplay FromXDisplay() {
-  auto* x_display = x11::Connection::Get()->GetXlibDisplay().display();
-  return eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(x_display));
-}
-
 }  // namespace
 
 }  // namespace gl
@@ -115,7 +110,7 @@ inline EGLDisplay FromXDisplay() {
 namespace ui {
 
 NativePixmapEGLX11Binding::NativePixmapEGLX11Binding()
-    : display_(gl::FromXDisplay()) {}
+    : display_(gl::GLSurfaceEGL::GetGLDisplayEGL()->GetDisplay()) {}
 
 NativePixmapEGLX11Binding::~NativePixmapEGLX11Binding() {
   if (surface_) {
