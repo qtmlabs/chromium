@@ -160,6 +160,10 @@ bool AngleVulkanImageBackingFactory::IsSupported(
     return false;
   }
 
+  if (format.PrefersExternalSampler()) {
+    return false;
+  }
+
   return CanCreateTexture(format, size, pixel_data, GL_TEXTURE_2D);
 }
 
