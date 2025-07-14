@@ -13,6 +13,7 @@
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/debug/dump_without_crashing.h"
+#include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
@@ -61,6 +62,7 @@
 #endif
 #include "ui/ozone/public/drm_modifiers_filter.h"
 #include "ui/ozone/public/ozone_platform.h"
+#include "ui/ozone/public/ozone_switches.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 #endif
 
@@ -98,6 +100,10 @@
 
 #if BUILDFLAG(SKIA_USE_DAWN) && BUILDFLAG(IS_CHROMEOS)
 #include "gpu/command_buffer/service/drm_modifiers_filter_dawn.h"
+#endif
+
+#if BUILDFLAG(IS_POSIX)
+#include <sys/stat.h>
 #endif
 
 namespace gpu {
@@ -307,6 +313,30 @@ void SetupGLDisplayManagerEGL(const GPUInfo& gpu_info,
       gpu_low_power ? gpu_low_power->system_device_id : 0;
   uint64_t system_device_id_default = gpu_default->system_device_id;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kRenderNodeOverride)) {
+    auto render_node =
+        base::CommandLine::ForCurrentProcess()->GetSwitchValuePath(
+            switches::kRenderNodeOverride);
+    base::stat_wrapper_t sb;
+    if (base::File::Stat(render_node, &sb) == 0) {
+      if (sb.st_rdev != 0) {
+        gl::SetGpuPreferenceEGL(gl::GpuPreference::kDefault, sb.st_rdev);
+        if (system_device_id_low_power) {
+          gl::SetGpuPreferenceEGL(gl::GpuPreference::kLowPower,
+                                  system_device_id_low_power);
+        }
+        if (system_device_id_high_perf) {
+          gl::SetGpuPreferenceEGL(gl::GpuPreference::kHighPerformance,
+                                  system_device_id_high_perf);
+        }
+        return;
+      }
+    }
+  }
+#endif
 
   if (gpu_info.GpuCount() <= 1) {
     gl::SetGpuPreferenceEGL(gl::GpuPreference::kDefault,
