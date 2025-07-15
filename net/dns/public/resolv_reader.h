@@ -25,6 +25,8 @@ class NET_EXPORT ResolvReader {
 
   // Null on failure.
   virtual std::unique_ptr<ScopedResState> GetResState();
+
+  virtual bool IsSystemdResolved();
 };
 
 // Returns configured DNS servers or nullopt on failure.

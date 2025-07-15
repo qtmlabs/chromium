@@ -281,9 +281,14 @@ class TestResolvReader : public ResolvReader {
     blocking_helper_ = blocking_helper;
   }
 
+  bool IsSystemdResolved() override { return is_systemd_resolved_; }
+
+  void set_is_systemd_resolved(bool value) { is_systemd_resolved_ = value; }
+
  private:
   std::unique_ptr<TestScopedResState> value_;
   raw_ptr<BlockingHelper> blocking_helper_ = nullptr;
+  bool is_systemd_resolved_ = false;
 };
 
 class TestNsswitchReader : public NsswitchReader {
@@ -884,6 +889,27 @@ TEST_F(DnsConfigServiceLinuxTest, RejectsNsswitchResolve) {
   ASSERT_TRUE(config.has_value());
   EXPECT_TRUE(config->IsValid());
   EXPECT_TRUE(config->unhandled_options);
+}
+
+TEST_F(DnsConfigServiceLinuxTest, AcceptsNsswitchResolve) {
+  auto res = std::make_unique<struct __res_state>();
+  InitializeResState(res.get());
+  resolv_reader_->set_value(std::move(res));
+  resolv_reader_->set_is_systemd_resolved(true);
+
+  nsswitch_reader_->set_value(
+      {NsswitchReader::ServiceSpecification(NsswitchReader::Service::kFiles),
+       NsswitchReader::ServiceSpecification(NsswitchReader::Service::kResolve),
+       NsswitchReader::ServiceSpecification(NsswitchReader::Service::kDns)});
+
+  CallbackHelper callback_helper;
+  service_.ReadConfig(callback_helper.GetCallback());
+  std::optional<DnsConfig> config = callback_helper.WaitForResult();
+  EXPECT_TRUE(resolv_reader_->closed());
+
+  ASSERT_TRUE(config.has_value());
+  EXPECT_TRUE(config->IsValid());
+  EXPECT_FALSE(config->unhandled_options);
 }
 
 TEST_F(DnsConfigServiceLinuxTest, RejectsNsswitchNis) {

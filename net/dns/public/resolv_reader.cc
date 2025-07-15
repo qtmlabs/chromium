@@ -33,6 +33,22 @@ std::unique_ptr<ScopedResState> ResolvReader::GetResState() {
   return res;
 }
 
+bool ResolvReader::IsSystemdResolved() {
+#if BUILDFLAG(IS_LINUX)
+  std::unique_ptr<ScopedResState> res = GetResState();
+  if (res) {
+    std::optional<std::vector<IPEndPoint>> nameservers =
+        GetNameservers(res->state());
+    if (nameservers) {
+      return nameservers->size() == 1 &&
+             nameservers->front() == IPEndPoint(IPAddress(127, 0, 0, 53), 53);
+    }
+  }
+#endif
+
+  return false;
+}
+
 std::optional<std::vector<IPEndPoint>> GetNameservers(
     const struct __res_state& res) {
   std::vector<IPEndPoint> nameservers;
