@@ -109,6 +109,11 @@ WaylandWindow::~WaylandWindow() {
 
   ReleaseCapture();
 
+  if (parent_window_ && HasPointerFocus()) {
+    connection()->event_source()->ReleasePressedPointerButtons(
+        this, EventTimeForNow());
+  }
+
   if (wayland_overlay_delegation_enabled_) {
     connection_->window_manager()->RemoveSubsurface(GetWidget(),
                                                     primary_subsurface_.get());
