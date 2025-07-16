@@ -876,7 +876,6 @@ void WaylandDataDragController::HandleDragEnd(DragResult result,
     if (origin_window_ == window_) {
       window_ = nullptr;
     }
-    origin_window_ = nullptr;
   }
 
   // We need to reset |nested_dispatcher_| before dispatching the pointer
