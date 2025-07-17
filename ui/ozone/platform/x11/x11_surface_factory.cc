@@ -235,12 +235,6 @@ scoped_refptr<gfx::NativePixmap> X11SurfaceFactory::CreateNativePixmap(
   return pixmap;
 }
 
-bool X11SurfaceFactory::CanCreateNativePixmapForFormat(
-    gfx::BufferFormat format) {
-  return ui::GpuMemoryBufferSupportX11::GetInstance()
-      ->CanCreateNativePixmapForFormat(format);
-}
-
 void X11SurfaceFactory::CreateNativePixmapAsync(
     gfx::AcceleratedWidget widget,
     gpu::VulkanDeviceQueue* device_queue,
@@ -261,6 +255,15 @@ X11SurfaceFactory::CreateNativePixmapFromHandle(
     gfx::BufferFormat format,
     gfx::NativePixmapHandle handle) {
   scoped_refptr<gfx::NativePixmapDmaBuf> pixmap;
+  if (!ui::GpuMemoryBufferSupportX11::GetInstance()
+           ->CanCreateNativePixmapForFormat(format)) {
+    pixmap = base::MakeRefCounted<gfx::NativePixmapDmaBuf>(size, format,
+                                                           std::move(handle));
+    if (!pixmap->AreDmaBufFdsValid()) {
+      return nullptr;
+    }
+    return pixmap;
+  }
   auto buffer =
       ui::GpuMemoryBufferSupportX11::GetInstance()->CreateBufferFromHandle(
           size, format, std::move(handle));
