@@ -1499,6 +1499,8 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
 
 #if BUILDFLAG(IS_ANDROID)
       wgpu::FeatureName::SharedTextureMemoryAHardwareBuffer,
+#endif
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
       wgpu::FeatureName::SharedFenceSyncFD,
 #endif
 
@@ -1741,13 +1743,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
       backend_types = {wgpu::BackendType::D3D12};
 #elif BUILDFLAG(IS_APPLE)
       backend_types = {wgpu::BackendType::Metal};
-#elif BUILDFLAG(IS_LINUX)
-      if (shared_context_state_->GrContextIsVulkan() ||
-          shared_context_state_->IsGraphiteDawnVulkan()) {
-        backend_types = {wgpu::BackendType::Vulkan};
-      } else {
-        backend_types = {wgpu::BackendType::OpenGLES};
-      }
 #else
       backend_types = {wgpu::BackendType::Vulkan, wgpu::BackendType::OpenGLES};
 #endif
@@ -1789,6 +1784,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
       supports_external_textures = adapter.HasFeature(
           wgpu::FeatureName::SharedTextureMemoryAHardwareBuffer);
     }
+#elif BUILDFLAG(IS_LINUX)
+    supports_external_textures =
+        native_adapter.SupportsExternalImages() &&
+        adapter.HasFeature(wgpu::FeatureName::SharedFenceSyncFD);
 #else
     // Chromium is in the midst of being transitioned to SharedTextureMemory
     // platform by platform. On platforms that have not yet been transitioned,
