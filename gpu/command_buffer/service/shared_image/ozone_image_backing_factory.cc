@@ -378,10 +378,9 @@ bool OzoneImageBackingFactory::CanVulkanSynchronizeGpuFence() {
 }
 
 bool OzoneImageBackingFactory::CanImportNativePixmapToWebGPU() {
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
   // Safe to always return true here, as it's not possible to create a WebGPU
   // adapter that doesn't support importing native pixmaps:
-  // https://source.chromium.org/chromium/chromium/src/+/main:gpu/command_buffer/service/webgpu_decoder_impl.cc;drc=daed597d580d450d36578c0cc53b4f72d3b507da;l=1291
   // TODO(crbug.com/40855765): To check it without vk_context_provider.
   return true;
 #else
@@ -399,9 +398,9 @@ bool OzoneImageBackingFactory::CanImportNativePixmapToWebGPU() {
 }
 
 bool OzoneImageBackingFactory::CanWebGPUSynchronizeGpuFence() {
-#if BUILDFLAG(IS_CHROMEOS)
-  // Dawn always use sync files on ChromeOS so it's safe to unconditionally
-  // return true here.
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+  // Dawn always use sync files on ChromeOS and Linux so it's safe to
+  // unconditionally return true here.
   return true;
 #else
   // TODO: somehow check if Dawn is using sync files.
