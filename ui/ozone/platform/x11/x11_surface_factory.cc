@@ -236,11 +236,6 @@ scoped_refptr<gfx::NativePixmap> X11SurfaceFactory::CreateNativePixmap(
   return pixmap;
 }
 
-bool X11SurfaceFactory::CanCreateNativePixmapForFormat(
-    viz::SharedImageFormat format) {
-  return ui::GBMSupportX11::GetInstance()->CanCreateBufferForFormat(format);
-}
-
 scoped_refptr<gfx::NativePixmap>
 X11SurfaceFactory::CreateNativePixmapFromHandle(
     gfx::AcceleratedWidget widget,
@@ -248,6 +243,14 @@ X11SurfaceFactory::CreateNativePixmapFromHandle(
     viz::SharedImageFormat format,
     gfx::NativePixmapHandle handle) {
   scoped_refptr<gfx::NativePixmapDmaBuf> pixmap;
+  if (!ui::GBMSupportX11::GetInstance()->CanCreateBufferForFormat(format)) {
+    pixmap = base::MakeRefCounted<gfx::NativePixmapDmaBuf>(size, format,
+                                                           std::move(handle));
+    if (!pixmap->AreDmaBufFdsValid()) {
+      return nullptr;
+    }
+    return pixmap;
+  }
   auto buffer = ui::GBMSupportX11::GetInstance()->CreateBufferFromHandle(
       size, format, std::move(handle));
   if (buffer) {
