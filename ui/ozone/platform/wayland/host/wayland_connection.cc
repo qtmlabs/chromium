@@ -54,6 +54,7 @@
 #include "ui/ozone/platform/wayland/host/wayland_shm.h"
 #include "ui/ozone/platform/wayland/host/wayland_window.h"
 #include "ui/ozone/platform/wayland/host/wayland_window_drag_controller.h"
+#include "ui/ozone/platform/wayland/host/wayland_wp_color_manager.h"
 #include "ui/ozone/platform/wayland/host/wayland_zcr_color_management_output.h"
 #include "ui/ozone/platform/wayland/host/wayland_zcr_color_manager.h"
 #include "ui/ozone/platform/wayland/host/wayland_zwp_linux_dmabuf.h"
@@ -166,6 +167,8 @@ bool WaylandConnection::Initialize(bool use_threaded_polling) {
                               &WaylandShm::Instantiate);
   RegisterGlobalObjectFactory(WaylandCursorShape::kInterfaceName,
                               &WaylandCursorShape::Instantiate);
+  RegisterGlobalObjectFactory(WaylandWpColorManager::kInterfaceName,
+                              &WaylandWpColorManager::Instantiate);
   RegisterGlobalObjectFactory(WaylandZwpLinuxDmabuf::kInterfaceName,
                               &WaylandZwpLinuxDmabuf::Instantiate);
   RegisterGlobalObjectFactory(WaylandZwpPointerConstraints::kInterfaceName,

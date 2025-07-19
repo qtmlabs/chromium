@@ -144,7 +144,7 @@ TEST_P(WaylandZcrColorManagerTest, DISABLED_CreateColorManagementSurface) {
   connection_->zcr_color_manager()->GetColorSpace(
       gfx::ColorSpace::CreateHDR10());
   connection_->RoundTripQueue();
-  surface->set_color_space(gfx::ColorSpace::CreateHDR10());
+  surface->SetImageDescription(gfx::ColorSpace::CreateHDR10(), std::nullopt);
   surface->AttachBuffer(connection_->buffer_manager_host()->EnsureBufferHandle(
       surface, buffer_id));
   surface->ApplyPendingState();
@@ -195,7 +195,7 @@ TEST_P(WaylandZcrColorManagerTest, DISABLED_DoNotSetInvaliColorSpace) {
   // original default color space remains unchanged on the surface.
   connection_->zcr_color_manager()->GetColorSpace(invalid_space);
   connection_->RoundTripQueue();
-  surface->set_color_space(invalid_space);
+  surface->SetImageDescription(invalid_space, std::nullopt);
   surface->AttachBuffer(connection_->buffer_manager_host()->EnsureBufferHandle(
       surface, buffer_id));
   surface->ApplyPendingState();
