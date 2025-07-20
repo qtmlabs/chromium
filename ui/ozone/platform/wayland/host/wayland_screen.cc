@@ -23,6 +23,7 @@
 #include "ui/display/display_list.h"
 #include "ui/display/util/display_util.h"
 #include "ui/display/util/gpu_info_util.h"
+#include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/gfx/font_render_params.h"
@@ -90,7 +91,7 @@ WaylandScreen::WaylandScreen(WaylandConnection* connection)
 
     // RGBA_8888 is the preferred format.
     if (format == gfx::BufferFormat::RGBA_8888)
-      image_format_alpha_ = gfx::BufferFormat::RGBA_8888;
+      image_format_alpha_ = format;
 
     if (format == gfx::BufferFormat::RGBA_F16)
       image_format_hdr_ = format;
@@ -99,11 +100,7 @@ WaylandScreen::WaylandScreen(WaylandConnection* connection)
       image_format_hdr_ = format;
 
     if (!image_format_alpha_ && format == gfx::BufferFormat::BGRA_8888)
-      image_format_alpha_ = gfx::BufferFormat::BGRA_8888;
-
-    if (image_format_alpha_ && image_format_hdr_) {
-      break;
-    }
+      image_format_alpha_ = format;
   }
 
   // If no buffer formats are found (neither wl_drm nor zwp_linux_dmabuf are
@@ -238,6 +235,23 @@ void WaylandScreen::AddOrUpdateDisplay(const WaylandOutput::Metrics& metrics) {
   }
   color_spaces.SetOutputBufferFormats(image_format_no_alpha_.value(),
                                       image_format_alpha_.value());
+  for (const auto color_usage :
+       {gfx::ContentColorUsage::kSRGB, gfx::ContentColorUsage::kWideColorGamut,
+        gfx::ContentColorUsage::kHDR}) {
+    for (const bool needs_alpha : {false, true}) {
+      if (needs_alpha &&
+          gfx::AlphaBitsForBufferFormat(image_format_hdr_.value()) < 8) {
+        continue;
+      }
+      auto color_space =
+          color_spaces.GetOutputColorSpace(color_usage, needs_alpha);
+      if (!color_space.IsWide() && !color_space.IsHDR()) {
+        continue;
+      }
+      color_spaces.SetOutputColorSpaceAndBufferFormat(
+          color_usage, needs_alpha, color_space, image_format_hdr_.value());
+    }
+  }
   changed_display.SetColorSpaces(color_spaces);
 
   // There are 2 cases where |changed_display| must be set as primary:

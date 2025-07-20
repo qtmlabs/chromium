@@ -1,0 +1,567 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Michael Reed <mike@reedtribe.org>
+Date: Wed, 18 Jun 2025 09:54:32 -0700
+Subject: Use SkSpan in SkData
+
+- clearup const / non-const behavior
+- clarify exactly what kind of subsetting the caller wants
+... with new tests for both kinds of subsetting
+
+Change-Id: I53e6721f5a822de0772cb8e63ff0798669236279
+Reviewed-on: https://skia-review.googlesource.com/c/skia/+/1009416
+Reviewed-by: Ben Wagner <bungeman@google.com>
+Commit-Queue: Mike Reed <mike@reedtribe.org>
+Reviewed-by: Florin Malita <fmalita@google.com>
+
+diff --git a/include/core/SkData.h b/include/core/SkData.h
+index 2b50cebc81b6aed66178881ee91236fc59a6eabc..d680fab4cacfe38f367436a2f035719938675398 100644
+--- a/include/core/SkData.h
++++ b/include/core/SkData.h
+@@ -9,68 +9,83 @@
+ #define SkData_DEFINED
+ 
+ #include "include/core/SkRefCnt.h"
++#include "include/core/SkSpan.h"
+ #include "include/private/base/SkAPI.h"
+-#include "include/private/base/SkAssert.h"
+ 
++#include <cstddef>
+ #include <cstdint>
+ #include <cstdio>
+ 
+ class SkStream;
+ 
+ /**
+- *  SkData holds an immutable data buffer. Not only is the data immutable,
+- *  but the actual ptr that is returned (by data() or bytes()) is guaranteed
+- *  to always be the same for the life of this instance.
++ *  SkData holds a data buffer. It can be created to allocate its own buffer
++ *  for the contents, or to share a pointer to the client's buffer. The size and
++ *  address of the contents never change for the lifetime of the data object.
+  */
+ class SK_API SkData final : public SkNVRefCnt<SkData> {
+ public:
+     /**
+-     *  Returns the number of bytes stored.
++     *  Returns true if this and rhs are the same size, and contain the same contents.
++     *  All empty objects compare as equal.
+      */
+-    size_t size() const { return fSize; }
++    bool operator==(const SkData& rhs) const;
++    bool operator!=(const SkData& rhs) const { return !(*this == rhs); }
+ 
+-    bool isEmpty() const { return 0 == fSize; }
++    /**
++     * Calls == operator, but first checks if other is null (in which case it returns false)
++     */
++    bool equals(const SkData* other) const {
++        return (other != nullptr) && *this == *other;
++    }
+ 
+     /**
+-     *  Returns the ptr to the data.
++     *  Returns the number of bytes stored.
+      */
+-    const void* data() const { return fPtr; }
++    size_t size() const { return fSpan.size(); }
+ 
+     /**
+-     *  Like data(), returns a read-only ptr into the data, but in this case
+-     *  it is cast to uint8_t*, to make it easy to add an offset to it.
++     *  Returns the ptr to the data.
+      */
+-    const uint8_t* bytes() const {
+-        return reinterpret_cast<const uint8_t*>(fPtr);
+-    }
++    const void* data() const { return fSpan.data(); }
++
++    bool empty() const { return fSpan.empty(); }
++
++    const uint8_t* bytes() const { return reinterpret_cast<const uint8_t*>(this->data()); }
++
++    SkSpan<const uint8_t> byteSpan() const { return {this->bytes(), this->size()}; }
+ 
+     /**
+      *  USE WITH CAUTION.
+-     *  This call will assert that the refcnt is 1, as a precaution against modifying the
+-     *  contents when another client/thread has access to the data.
++     *  Be sure other 'owners' of this object are not accessing it in aother thread.
+      */
+     void* writable_data() {
+-        if (fSize) {
+-            // only assert we're unique if we're not empty
+-            SkASSERT(this->unique());
+-        }
+-        return const_cast<void*>(fPtr);
++        return fSpan.data();
+     }
+ 
++    /** Attempt to create a deep copy of the original data, using the default allocator.
++     *
++     *  If  offset+length > this->size(), then this returns nullptr.
++     */
++    sk_sp<SkData> copySubset(size_t offset, size_t length) const;
++
++    /** Attempt to return a data that is a reference to a subset of the original data,
++     *  This will never make a deep copy of the contents, but will retain a reference
++     *  to the original data object.
++     *
++     *  If  offset+length > this->size(), then this returns nullptr.
++     */
++    sk_sp<SkData> shareSubset(size_t offset, size_t length);
++    sk_sp<const SkData> shareSubset(size_t offset, size_t length) const;
++
+     /**
+      *  Helper to copy a range of the data into a caller-provided buffer.
+      *  Returns the actual number of bytes copied, after clamping offset and
+-     *  length to the size of the data. If buffer is NULL, it is ignored, and
++     *  length to the size of this data. If buffer is NULL, it is ignored, and
+      *  only the computed number of bytes is returned.
+      */
+     size_t copyRange(size_t offset, size_t length, void* buffer) const;
+ 
+-    /**
+-     *  Returns true if these two objects have the same length and contents,
+-     *  effectively returning 0 == memcmp(...)
+-     */
+-    bool equals(const SkData* other) const;
+-
+     /**
+      *  Function that, if provided, will be called when the SkData goes out
+      *  of scope, allowing for custom allocation/freeing of the data's contents.
+@@ -111,7 +126,7 @@ public:
+ 
+     /**
+      *  Call this when the data parameter is already const and will outlive the lifetime of the
+-     *  SkData. Suitable for with const globals.
++     *  SkData. Suitable for globals.
+      */
+     static sk_sp<SkData> MakeWithoutCopy(const void* data, size_t length) {
+         return MakeWithProc(data, length, NoopReleaseProc, nullptr);
+@@ -155,10 +170,17 @@ public:
+     static sk_sp<SkData> MakeFromStream(SkStream*, size_t size);
+ 
+     /**
+-     *  Create a new dataref using a subset of the data in the specified
+-     *  src dataref.
++     *  DEPRECATED variant of src->shareSubset(offset, length)
++     *
++     *  This variant checks if shaerSubset() returned null (because offset or length were out-of-range)
++     *  and returns an empty SkData, rather than returning null.
+      */
+-    static sk_sp<SkData> MakeSubset(const SkData* src, size_t offset, size_t length);
++    static sk_sp<SkData> MakeSubset(const SkData* src, size_t offset, size_t length) {
++        if (sk_sp<SkData> dst = const_cast<SkData*>(src)->shareSubset(offset, length)) {
++            return dst;
++        }
++        return SkData::MakeEmpty();
++    }
+ 
+     /**
+      *  Returns a new empty dataref (or a reference to a shared empty dataref).
+@@ -166,14 +188,18 @@ public:
+      */
+     static sk_sp<SkData> MakeEmpty();
+ 
++    /**
++     *  DEPRECATED -- use empty()
++     */
++    bool isEmpty() const { return fSpan.empty(); }
++
+ private:
+     friend class SkNVRefCnt<SkData>;
+-    ReleaseProc fReleaseProc;
+-    void*       fReleaseProcContext;
+-    const void* fPtr;
+-    size_t      fSize;
++    ReleaseProc         fReleaseProc;
++    void*               fReleaseProcContext;
++    SkSpan<std::byte>   fSpan;
+ 
+-    SkData(const void* ptr, size_t size, ReleaseProc, void* context);
++    SkData(SkSpan<std::byte>, ReleaseProc, void* context);
+     explicit SkData(size_t size);   // inplace new/delete
+     ~SkData();
+ 
+diff --git a/src/codec/SkImageGenerator_FromEncoded.cpp b/src/codec/SkImageGenerator_FromEncoded.cpp
+index 796f3a5424f85e2e33b69aa29335bae512a6e8fa..748bf36ab275ebb740fcbbc1102dbc15d3d5141e 100644
+--- a/src/codec/SkImageGenerator_FromEncoded.cpp
++++ b/src/codec/SkImageGenerator_FromEncoded.cpp
+@@ -51,7 +51,7 @@ namespace SkImages {
+ 
+ sk_sp<SkImage> DeferredFromEncodedData(sk_sp<SkData> encoded,
+                                        std::optional<SkAlphaType> alphaType) {
+-    if (nullptr == encoded || encoded->isEmpty()) {
++    if (nullptr == encoded || encoded->empty()) {
+         return nullptr;
+     }
+     return DeferredFromGenerator(SkImageGenerators::MakeFromEncoded(std::move(encoded), alphaType));
+diff --git a/src/core/SkData.cpp b/src/core/SkData.cpp
+index f60762a61d826a76703e08b426b2db147011302e..4573b6e624788ff0d6d47e6da72ad6e7799048b7 100644
+--- a/src/core/SkData.cpp
++++ b/src/core/SkData.cpp
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "include/core/SkData.h"
++#include "include/core/SkSpan.h"
+ 
+ #include "include/core/SkStream.h"
+ #include "include/private/base/SkAssert.h"
+@@ -14,14 +15,14 @@
+ #include "src/core/SkOSFile.h"
+ #include "src/core/SkStreamPriv.h"
+ 
++#include <cstddef>
+ #include <cstring>
+ #include <new>
+ 
+-SkData::SkData(const void* ptr, size_t size, ReleaseProc proc, void* context)
++SkData::SkData(SkSpan<std::byte> span, ReleaseProc proc, void* context)
+     : fReleaseProc(proc)
+     , fReleaseProcContext(context)
+-    , fPtr(ptr)
+-    , fSize(size)
++    , fSpan(span)
+ {}
+ 
+ /** This constructor means we are inline with our fPtr's contents.
+@@ -30,28 +31,24 @@ SkData::SkData(const void* ptr, size_t size, ReleaseProc proc, void* context)
+ SkData::SkData(size_t size)
+     : fReleaseProc(nullptr)
+     , fReleaseProcContext(nullptr)
+-    , fPtr((const char*)(this + 1))
+-    , fSize(size)
++    , fSpan{(std::byte*)(this + 1), size}
+ {}
+ 
+ SkData::~SkData() {
+     if (fReleaseProc) {
+-        fReleaseProc(fPtr, fReleaseProcContext);
++        fReleaseProc(fSpan.data(), fReleaseProcContext);
+     }
+ }
+ 
+-bool SkData::equals(const SkData* other) const {
+-    if (this == other) {
++bool SkData::operator==(const SkData& other) const {
++    if (this == &other) {
+         return true;
+     }
+-    if (nullptr == other) {
+-        return false;
+-    }
+-    return fSize == other->fSize && !sk_careful_memcmp(fPtr, other->fPtr, fSize);
++    return size() == other.size() && !sk_careful_memcmp(data(), other.data(), size());
+ }
+ 
+ size_t SkData::copyRange(size_t offset, size_t length, void* buffer) const {
+-    size_t available = fSize;
++    size_t available = this->size();
+     if (offset >= available || 0 == length) {
+         return 0;
+     }
+@@ -67,6 +64,42 @@ size_t SkData::copyRange(size_t offset, size_t length, void* buffer) const {
+     return length;
+ }
+ 
++
++#define RETURN_EMPTY_FOR_ZERO_SIZE(size)    \
++    do {                                    \
++        if ((size) == 0) {                  \
++            return SkData::MakeEmpty();     \
++        }                                   \
++    } while (false)
++
++#define VALIDATE_SUBSET(size, offset, length)           \
++    do {                                                \
++        if (offset > size || length > size - offset) {  \
++            return nullptr;                             \
++        }                                               \
++    } while (0)
++
++sk_sp<SkData> SkData::shareSubset(size_t offset, size_t length) {
++    VALIDATE_SUBSET(this->size(), offset, length);
++
++    if (offset == 0 && length == this->size()) {
++        return sk_ref_sp(this);
++    }
++
++    RETURN_EMPTY_FOR_ZERO_SIZE(length);
++
++    this->ref();
++    return SkData::MakeWithProc(this->bytes() + offset, length, [](const void*, void* ctx) {
++        ((SkData*)ctx)->unref();
++    }, this);
++}
++
++sk_sp<SkData> SkData::copySubset(size_t offset, size_t length) const {
++    VALIDATE_SUBSET(this->size(), offset, length);
++
++    return SkData::MakeWithCopy(this->bytes() + offset, length);
++}
++
+ void SkData::operator delete(void* p) {
+     ::operator delete(p);
+ }
+@@ -95,7 +128,7 @@ sk_sp<SkData> SkData::MakeEmpty() {
+     static SkOnce once;
+     static SkData* empty;
+ 
+-    once([]{ empty = new SkData(nullptr, 0, nullptr, nullptr); });
++    once([]{ empty = new SkData({}, nullptr, nullptr); });
+     return sk_ref_sp(empty);
+ }
+ 
+@@ -105,7 +138,8 @@ static void sk_free_releaseproc(const void* ptr, void*) {
+ }
+ 
+ sk_sp<SkData> SkData::MakeFromMalloc(const void* data, size_t length) {
+-    return sk_sp<SkData>(new SkData(data, length, sk_free_releaseproc, nullptr));
++    std::byte* ptr = static_cast<std::byte*>(const_cast<void*>(data));
++    return sk_sp<SkData>(new SkData({ptr, length}, sk_free_releaseproc, nullptr));
+ }
+ 
+ sk_sp<SkData> SkData::MakeWithCopy(const void* src, size_t length) {
+@@ -125,8 +159,9 @@ sk_sp<SkData> SkData::MakeZeroInitialized(size_t length) {
+     return data;
+ }
+ 
+-sk_sp<SkData> SkData::MakeWithProc(const void* ptr, size_t length, ReleaseProc proc, void* ctx) {
+-    return sk_sp<SkData>(new SkData(ptr, length, proc, ctx));
++sk_sp<SkData> SkData::MakeWithProc(const void* data, size_t length, ReleaseProc proc, void* ctx) {
++    std::byte* ptr = static_cast<std::byte*>(const_cast<void*>(data));
++    return sk_sp<SkData>(new SkData({ptr, length}, proc, ctx));
+ }
+ 
+ // assumes fPtr was allocated with sk_fmmap
+@@ -164,34 +199,6 @@ sk_sp<SkData> SkData::MakeFromFD(int fd) {
+     return SkData::MakeWithProc(addr, size, sk_mmap_releaseproc, reinterpret_cast<void*>(size));
+ }
+ 
+-// assumes context is a SkData
+-static void sk_dataref_releaseproc(const void*, void* context) {
+-    SkData* src = reinterpret_cast<SkData*>(context);
+-    src->unref();
+-}
+-
+-sk_sp<SkData> SkData::MakeSubset(const SkData* src, size_t offset, size_t length) {
+-    /*
+-        We could, if we wanted/need to, just make a deep copy of src's data,
+-        rather than referencing it. This would duplicate the storage (of the
+-        subset amount) but would possibly allow src to go out of scope sooner.
+-     */
+-
+-    size_t available = src->size();
+-    if (offset >= available || 0 == length) {
+-        return SkData::MakeEmpty();
+-    }
+-    available -= offset;
+-    if (length > available) {
+-        length = available;
+-    }
+-    SkASSERT(length > 0);
+-
+-    src->ref(); // this will be balanced in sk_dataref_releaseproc
+-    return sk_sp<SkData>(new SkData(src->bytes() + offset, length, sk_dataref_releaseproc,
+-                                    const_cast<SkData*>(src)));
+-}
+-
+ sk_sp<SkData> SkData::MakeWithCString(const char cstr[]) {
+     size_t size;
+     if (nullptr == cstr) {
+diff --git a/src/encode/SkICC.cpp b/src/encode/SkICC.cpp
+index ec1901a2cd926abb468309d7a3a274037a648082..44bc5c2c8edf318134f4d3d1e5f78a4222263504 100644
+--- a/src/encode/SkICC.cpp
++++ b/src/encode/SkICC.cpp
+@@ -656,7 +656,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_ICCProfile* profile, const char* des
+     size_t last_tag_offset = sizeof(header) + tag_table_size;
+     size_t last_tag_size = 0;
+     for (const auto& tag : tags) {
+-        if (!tag.second->isEmpty()) {
++        if (!tag.second->empty()) {
+             last_tag_offset = last_tag_offset + last_tag_size;
+             last_tag_size = tag.second->size();
+         }
+@@ -671,7 +671,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_ICCProfile* profile, const char* des
+ 
+     // Write the tags.
+     for (const auto& tag : tags) {
+-        if (tag.second->isEmpty()) continue;
++        if (tag.second->empty()) continue;
+         memcpy(ptr, tag.second->data(), tag.second->size());
+         ptr += tag.second->size();
+     }
+diff --git a/src/gpu/ganesh/GrPixmap.h b/src/gpu/ganesh/GrPixmap.h
+index 26561d4eef40ae750cc6e40f8bca774d198ad504..d80dc4cdbdc8678436f72ebafe1812a75ea76a98 100644
+--- a/src/gpu/ganesh/GrPixmap.h
++++ b/src/gpu/ganesh/GrPixmap.h
+@@ -82,7 +82,7 @@ protected:
+     }
+ 
+     GrPixmapBase(GrImageInfo info, sk_sp<SkData> storage, size_t rowBytes)
+-            : GrPixmapBase(std::move(info), const_cast<void*>(storage->data()), rowBytes) {
++            : GrPixmapBase(std::move(info), storage->writable_data(), rowBytes) {
+         fPixelStorage = std::move(storage);
+     }
+ 
+diff --git a/src/ports/SkFontHost_win.cpp b/src/ports/SkFontHost_win.cpp
+index 803e46209416b38162f8ccfcab2d27619e1b33f0..be753bf9b939737d0c238565776815b4f113360e 100644
+--- a/src/ports/SkFontHost_win.cpp
++++ b/src/ports/SkFontHost_win.cpp
+@@ -1780,7 +1780,7 @@ static HRESULT create_unique_font_name(char* buffer, size_t bufferSize) {
+    Introduces a font to GDI. On failure will return nullptr. The returned handle
+    should eventually be passed to RemoveFontMemResourceEx.
+ */
+-static HANDLE activate_font(SkData* fontData) {
++static HANDLE activate_font(const SkData* fontData) {
+     DWORD numFonts = 0;
+     //AddFontMemResourceEx just copies the data, but does not specify const.
+     HANDLE fontHandle = AddFontMemResourceEx(const_cast<void*>(fontData->data()),
+diff --git a/tests/DataRefTest.cpp b/tests/DataRefTest.cpp
+index fce090c70963c1c9bbdfe9cb58e773dd0726b598..ecd1d3b8abee03e35ba8b88307c3460b0715c5e7 100644
+--- a/tests/DataRefTest.cpp
++++ b/tests/DataRefTest.cpp
+@@ -8,6 +8,7 @@
+ #include "include/core/SkData.h"
+ #include "include/core/SkDataTable.h"
+ #include "include/core/SkRefCnt.h"
++#include "include/core/SkSpan.h"
+ #include "include/core/SkStream.h"
+ #include "include/core/SkString.h"
+ #include "include/core/SkTypes.h"
+@@ -170,13 +171,90 @@ static void test_files(skiatest::Reporter* reporter) {
+     sk_sp<SkData> r1(SkData::MakeFromFILE(file));
+     REPORTER_ASSERT(reporter, r1.get() != nullptr);
+     REPORTER_ASSERT(reporter, r1->size() == 26);
+-    REPORTER_ASSERT(reporter, strncmp(static_cast<const char*>(r1->data()), s, 26) == 0);
++    REPORTER_ASSERT(reporter, strncmp(reinterpret_cast<const char*>(r1->data()), s, 26) == 0);
+ 
+     int fd = sk_fileno(file);
+     sk_sp<SkData> r2(SkData::MakeFromFD(fd));
+     REPORTER_ASSERT(reporter, r2.get() != nullptr);
+     REPORTER_ASSERT(reporter, r2->size() == 26);
+-    REPORTER_ASSERT(reporter, strncmp(static_cast<const char*>(r2->data()), s, 26) == 0);
++    REPORTER_ASSERT(reporter, strncmp(reinterpret_cast<const char*>(r2->data()), s, 26) == 0);
++}
++
++template <typename T> bool operator==(SkSpan<T> a, SkSpan<T> b) {
++    return a.size() == b.size() && a.data() == b.data();
++}
++template <typename T> bool operator!=(SkSpan<T> a, SkSpan<T> b) {
++    return !(a == b);
++}
++
++template <typename T> bool deep_equal(SkSpan<T> a, SkSpan<T> b) {
++    if (a.size() != b.size()) {
++        return false;
++    }
++    return (a.size() == 0) || (memcmp(a.data(), b.data(), a.size()) == 0);
++}
++
++static void test_subsets(skiatest::Reporter* reporter) {
++    uint8_t array[] = {1, 2, 3, 4};
++    auto src = SkData::MakeWithoutCopy(array, sizeof(array));
++
++    struct Subset {
++        size_t offset, length;
++    };
++
++    const Subset bad_subsets[] = {
++        {5, 0}, {4, 2}, {0, 5}, {3, 2},
++    };
++    for (auto s : bad_subsets) {
++        REPORTER_ASSERT(reporter, src->shareSubset(s.offset, s.length) == nullptr);
++        REPORTER_ASSERT(reporter, src->copySubset(s.offset, s.length) == nullptr);
++    }
++
++    const Subset empty_subsets[] = {
++        {0, 0}, {2, 0}, {4, 0},
++    };
++    for (auto s : empty_subsets) {
++        REPORTER_ASSERT(reporter, src->shareSubset(s.offset, s.length)->empty());
++        REPORTER_ASSERT(reporter, src->copySubset(s.offset, s.length)->empty());
++    }
++
++    auto assert_shared = [reporter](sk_sp<const SkData> data, SkSpan<const uint8_t> src) {
++        REPORTER_ASSERT(reporter, data->byteSpan() == src);
++    };
++    auto assert_copied = [reporter](sk_sp<const SkData> data, SkSpan<const uint8_t> src) {
++        REPORTER_ASSERT(reporter, data->byteSpan() != src);
++        REPORTER_ASSERT(reporter, deep_equal(data->byteSpan(), src));
++    };
++
++    const Subset nonempty_subsets[] = {
++        {0, 4}, {2, 2}, {0, 2}, {1, 2},
++    };
++    for (auto s : nonempty_subsets) {
++        const auto srcSpan = src->byteSpan().subspan(s.offset, s.length);
++        assert_shared(src->shareSubset(s.offset, s.length), srcSpan);
++        assert_copied(src->copySubset(s.offset, s.length),  srcSpan);
++    }
++}
++
++static void test_copies(skiatest::Reporter* reporter) {
++    int32_t array[10];
++    for (int i = 0; i < 10; ++i) array[i] = i;
++
++    auto d = SkData::MakeWithCopy(array, sizeof(array));
++    REPORTER_ASSERT(reporter, d->size() == sizeof(array));
++    REPORTER_ASSERT(reporter, memcmp(array, d->data(), sizeof(array)) == 0);
++
++    auto d1 = d->shareSubset(8, 16);    // 2, 3, 4, 5
++    REPORTER_ASSERT(reporter, d1->size() == 16);
++    REPORTER_ASSERT(reporter, d1->bytes() == d->bytes() + 8);
++
++    auto d2 = d->copySubset(8, 16);
++    REPORTER_ASSERT(reporter, d2->size() == 16);
++    REPORTER_ASSERT(reporter, memcmp(d2->data(), &array[2], d2->size()) == 0);
++
++    REPORTER_ASSERT(reporter, *d == *d);
++    REPORTER_ASSERT(reporter, *d != *d1);
++    REPORTER_ASSERT(reporter, *d1 == *d2);
+ }
+ 
+ DEF_TEST(Data, reporter) {
+@@ -203,6 +281,9 @@ DEF_TEST(Data, reporter) {
+ 
+     test_cstring(reporter);
+     test_files(reporter);
++
++    test_subsets(reporter);
++    test_copies(reporter);
+ }
+ 
+ DEF_TEST(Data_empty, reporter) {
+diff --git a/tools/UrlDataManager.cpp b/tools/UrlDataManager.cpp
+index bbdf56a393f0d0082355275de466a72e0326d895..2730298e32d745881010adb1436e8e71d02ce70c 100644
+--- a/tools/UrlDataManager.cpp
++++ b/tools/UrlDataManager.cpp
+@@ -10,10 +10,6 @@
+ #include <unordered_map>
+ #include <vector>
+ 
+-bool operator==(const SkData& a, const SkData& b) {
+-    return a.equals(&b);
+-}
+-
+ UrlDataManager::UrlDataManager(SkString rootUrl) : fRootUrl(rootUrl), fDataId(0) {}
+ 
+ SkString UrlDataManager::addData(SkData* data, const char* contentType) {
+diff --git a/tools/UrlDataManager.h b/tools/UrlDataManager.h
+index 5529c424bce8e52fb2012173111ee41ba6199e12..316c93298eeb333537936613c16367ba1005539d 100644
+--- a/tools/UrlDataManager.h
++++ b/tools/UrlDataManager.h
+@@ -17,12 +17,6 @@
+ #include <unordered_map>
+ #include <vector>
+ 
+-/*
+- * A simple class which allows clients to add opaque data types, and returns a url where this data
+- * will be hosted.  Its up to the owner of this class to actually serve the data.
+- */
+-bool operator==(const SkData& a, const SkData& b);
+-
+ class UrlDataManager {
+ public:
+     UrlDataManager(SkString rootUrl);

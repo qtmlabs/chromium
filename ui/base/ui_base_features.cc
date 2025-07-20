@@ -141,6 +141,11 @@ BASE_FEATURE(kWaylandUiScale,
 BASE_FEATURE(kWaylandSessionManagement,
              "WaylandSessionManagement",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+// Controls whether Wayland color-management-v1 protocol support is enabled.
+BASE_FEATURE(kWaylandWpColorManagerV1,
+             "WaylandWpColorManagerV1",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_OZONE)
 
 #if BUILDFLAG(IS_LINUX)

@@ -5,9 +5,11 @@
 #include "ui/ozone/platform/wayland/host/wayland_wp_color_management_output.h"
 
 #include "base/logging.h"
+#include "ui/display/util/display_util.h"
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_output.h"
+#include "ui/ozone/platform/wayland/host/wayland_wp_color_manager.h"
 
 namespace ui {
 
@@ -50,14 +52,20 @@ void WaylandWpColorManagementOutput::OnImageDescription(
   }
   CHECK_EQ(image_description, image_description_);
 
-  display_color_spaces_ =
-      gfx::DisplayColorSpaces(image_description->gfx_color_space());
+  if (display::HasForceDisplayColorProfile()) {
+    display_color_spaces_ =
+        gfx::DisplayColorSpaces(display::GetForcedDisplayColorProfile());
+  } else if (connection_->wp_color_manager()->IsSupportedTransferFunction(
+                 WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB)) {
+    display_color_spaces_ = gfx::DisplayColorSpaces();
+  } else {
+    display_color_spaces_ = gfx::DisplayColorSpaces(
+        gfx::ColorSpace(gfx::ColorSpace::PrimaryID::BT709,
+                        gfx::ColorSpace::TransferID::GAMMA22));
+  }
 
   // Set HDR metadata and derive luminance values.
   const auto& hdr_metadata = image_description->hdr_metadata();
-  if (hdr_metadata.ndwl) {
-    display_color_spaces_.SetSDRMaxLuminanceNits(hdr_metadata.ndwl->nits);
-  }
 
   // GetContentMaxLuminance returns a default of 1000 if the metadata does
   // not contain a peak luminance. Avoid this by checking first.
@@ -67,10 +75,45 @@ void WaylandWpColorManagementOutput::OnImageDescription(
        hdr_metadata.smpte_st_2086->luminance_max > 0)) {
     float peak_brightness =
         gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata);
-    float sdr_nits = display_color_spaces_.GetSDRMaxLuminanceNits();
+    float sdr_nits = hdr_metadata.ndwl ? hdr_metadata.ndwl->nits
+                                       : gfx::ColorSpace::kDefaultSDRWhiteLevel;
     if (sdr_nits > 0.f) {
       display_color_spaces_.SetHDRMaxLuminanceRelative(peak_brightness /
                                                        sdr_nits);
+    }
+  }
+
+  if (!display::HasForceDisplayColorProfile()) {
+    auto color_space = image_description->gfx_color_space();
+    display_color_spaces_.SetPrimaries(color_space.GetPrimaries());
+    if (color_space.IsWide()) {
+      for (const bool needs_alpha : {false, true}) {
+        auto buffer_format = display_color_spaces_.GetOutputBufferFormat(
+            gfx::ContentColorUsage::kWideColorGamut, needs_alpha);
+        display_color_spaces_.SetOutputColorSpaceAndBufferFormat(
+            gfx::ContentColorUsage::kWideColorGamut, needs_alpha, color_space,
+            buffer_format);
+      }
+    }
+    auto hdr_color_space = color_space;
+    if (display_color_spaces_.GetHDRMaxLuminanceRelative() > 1.f &&
+        !hdr_color_space.IsHDR()) {
+      if (connection_->wp_color_manager()->IsSupportedTransferFunction(
+              WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ)) {
+        hdr_color_space = gfx::ColorSpace::CreateHDR10();
+      } else if (connection_->wp_color_manager()->IsSupportedTransferFunction(
+                     WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG)) {
+        hdr_color_space = gfx::ColorSpace::CreateHLG();
+      }
+    }
+    if (hdr_color_space.IsWide() || hdr_color_space.IsHDR()) {
+      for (const bool needs_alpha : {false, true}) {
+        auto buffer_format = display_color_spaces_.GetOutputBufferFormat(
+            gfx::ContentColorUsage::kHDR, needs_alpha);
+        display_color_spaces_.SetOutputColorSpaceAndBufferFormat(
+            gfx::ContentColorUsage::kHDR, needs_alpha, hdr_color_space,
+            buffer_format);
+      }
     }
   }
 
