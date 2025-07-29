@@ -746,6 +746,9 @@ bool DesktopWindowTreeHostPlatform::ShouldUseNativeFrame() const {
 }
 
 bool DesktopWindowTreeHostPlatform::ShouldWindowContentsBeTransparent() const {
+  if (IsFullscreen()) {
+    return false;
+  }
   return platform_window()->ShouldWindowContentsBeTransparent() ||
          !(GetWindowMaskForClipping().isEmpty());
 }
