@@ -56,12 +56,11 @@ void WaylandWpColorManagementOutput::OnImageDescription(
   // Set HDR metadata and derive luminance values.
   const auto& hdr_metadata = image_description->hdr_metadata();
 
-  // GetContentMaxLuminance returns a default of 1000 if the metadata does
-  // not contain a peak luminance. Avoid this by checking first.
   if ((hdr_metadata.cta_861_3 &&
        hdr_metadata.cta_861_3->max_content_light_level > 0) ||
       (hdr_metadata.smpte_st_2086 &&
-       hdr_metadata.smpte_st_2086->luminance_max > 0)) {
+       hdr_metadata.smpte_st_2086->luminance_max > 0) ||
+      display_color_spaces_.SupportsHDR()) {
     float peak_brightness =
         gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata);
     float sdr_nits = hdr_metadata.ndwl ? hdr_metadata.ndwl->nits
