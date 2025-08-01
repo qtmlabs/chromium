@@ -131,6 +131,9 @@ BASE_DECLARE_FEATURE(kWaylandTextInputV3);
 
 COMPONENT_EXPORT(UI_BASE_FEATURES)
 BASE_DECLARE_FEATURE(kWaylandSessionManagement);
+
+COMPONENT_EXPORT(UI_BASE_FEATURES)
+BASE_DECLARE_FEATURE(kWaylandWpColorManagerV1);
 #endif  // BUILDFLAG(IS_OZONE)
 
 // Indicates whether DrmOverlayManager should used the synchronous API to

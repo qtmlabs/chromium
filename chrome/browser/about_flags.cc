@@ -13821,6 +13821,13 @@ const FeatureEntry kFeatureEntries[] = {
      SINGLE_VALUE_TYPE(switches::kVulkanForceYCbCrLinearSampling)},
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_LINUX)
+    {"wayland-color-management-v1",
+     flag_descriptions::kWaylandWpColorManagerV1Name,
+     flag_descriptions::kWaylandWpColorManagerV1Description, kOsLinux,
+     FEATURE_VALUE_TYPE(features::kWaylandWpColorManagerV1)},
+#endif  // BUILDFLAG(IS_LINUX)
+
     // Add new entries above this line.
     // NOTE: Adding a new flag requires adding a corresponding entry to enum
     // "LoginCustomFlags" in tools/metrics/histograms/enums.xml. See "Flag

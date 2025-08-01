@@ -127,6 +127,9 @@ BASE_FEATURE(kWaylandTextInputV3, base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Controls whether Wayland session management protocol is enabled.
 BASE_FEATURE(kWaylandSessionManagement, base::FEATURE_DISABLED_BY_DEFAULT);
+
+// Controls whether Wayland color-management-v1 protocol support is enabled.
+BASE_FEATURE(kWaylandWpColorManagerV1, base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_OZONE)
 
 // When enabled, the feature will query the OS for a default cursor size,
