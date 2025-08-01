@@ -121,7 +121,8 @@ WaylandWpImageDescription::AsDisplayColorSpaces() const {
   if ((hdr_metadata_.cta_861_3 &&
        hdr_metadata_.cta_861_3->max_content_light_level > 0) ||
       (hdr_metadata_.smpte_st_2086 &&
-       hdr_metadata_.smpte_st_2086->luminance_max > 0)) {
+       hdr_metadata_.smpte_st_2086->luminance_max > 0) ||
+      color_space_.IsHDR()) {
     float peak_brightness =
         gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata_);
     float sdr_nits = hdr_metadata_.ndwl
