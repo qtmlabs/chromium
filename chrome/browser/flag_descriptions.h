@@ -5215,6 +5215,11 @@ extern const char kVulkanForceYCbCrLinearSamplingName[];
 extern const char kVulkanForceYCbCrLinearSamplingDescription[];
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_LINUX)
+extern const char kWaylandWpColorManagerV1Name[];
+extern const char kWaylandWpColorManagerV1Description[];
+#endif  // BUILDFLAG(IS_LINUX)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order. See top instructions for more.

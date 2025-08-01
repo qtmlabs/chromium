@@ -8,6 +8,7 @@
 
 #include "base/feature_list.h"
 #include "base/logging.h"
+#include "ui/base/ui_base_features.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_output_manager.h"
 
@@ -16,10 +17,6 @@ namespace ui {
 namespace {
 
 constexpr uint32_t kMinVersion = 1;
-
-BASE_FEATURE(kWaylandWpColorManagerV1,
-             "WaylandWpColorManagerV1",
-             base::FEATURE_ENABLED_BY_DEFAULT);
 
 std::optional<wp_color_manager_v1_primaries> ColorSpaceToPrimaries(
     gfx::ColorSpace::PrimaryID primary_id) {
@@ -113,7 +110,7 @@ void WaylandWpColorManager::Instantiate(WaylandConnection* connection,
                                         uint32_t name,
                                         const std::string& interface,
                                         uint32_t version) {
-  if (!base::FeatureList::IsEnabled(kWaylandWpColorManagerV1)) {
+  if (!base::FeatureList::IsEnabled(features::kWaylandWpColorManagerV1)) {
     return;
   }
 

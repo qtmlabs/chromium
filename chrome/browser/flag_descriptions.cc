@@ -8872,6 +8872,13 @@ const char kVulkanForceYCbCrLinearSamplingDescription[] =
     " as supported by the graphics driver";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_LINUX)
+const char kWaylandWpColorManagerV1Name[] =
+    "Wayland color-management-v1 protocol";
+const char kWaylandWpColorManagerV1Description[] =
+    "Enables support for Wayland color-management-v1 protocol";
+#endif  // BUILDFLAG(IS_LINUX)
+
 // ============================================================================
 // Don't just add flags to the end, put them in the right section in
 // alphabetical order just like the header file.
