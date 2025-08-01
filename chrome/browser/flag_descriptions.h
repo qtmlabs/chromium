@@ -8436,6 +8436,11 @@ inline constexpr char kVulkanForceYCbCrLinearSamplingDescription[] =
     "Force usage of YUV linear sampling on Vulkan even if it's not reported"
     " as supported by the graphics driver";
 
+inline constexpr char kWaylandWpColorManagerV1Name[] =
+    "Wayland color-management-v1 protocol";
+inline constexpr char kWaylandWpColorManagerV1Description[] =
+    "Enables support for Wayland color-management-v1 protocol";
+
 // ============================================================================
 // Don't just add flags to the end, put them in the alphabetical order.
 // ============================================================================
