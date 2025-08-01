@@ -6,8 +6,10 @@
 
 #include <color-management-v1-client-protocol.h>
 
+#include "base/environment.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
+#include "base/nix/xdg_util.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/gfx/hdr_metadata_agtm.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
@@ -394,6 +396,13 @@ bool WaylandWpColorManager::IsSupportedPrimaries(
 
 bool WaylandWpColorManager::IsSupportedTransferFunction(
     wp_color_manager_v1_transfer_function transfer_function) const {
+  if (base::nix::GetDesktopEnvironment(base::Environment::Create().get()) ==
+          base::nix::DESKTOP_ENVIRONMENT_KDE6 &&
+      transfer_function == WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB) {
+    // kwin_wayland lies:
+    // https://invent.kde.org/plasma/kwin/-/blob/7fc9317fecea7660409f43fb55b0d8b38c52fb9f/src/wayland/colormanagement_v1.cpp#L282
+    return false;
+  }
   return supported_transfers_ & (1 << transfer_function);
 }
 
