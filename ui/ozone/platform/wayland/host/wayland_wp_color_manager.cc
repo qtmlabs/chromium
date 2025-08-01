@@ -6,6 +6,8 @@
 
 #include <color-management-v1-client-protocol.h>
 
+#include <cmath>
+
 #include "base/environment.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
@@ -322,6 +324,9 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
       if (clli.fMaxFALL > 0) {
         fall = clli.getUint16MaxFALL();
       }
+    } else if (hdr_metadata.extended_range) {
+      cll = static_cast<uint32_t>(
+          std::ceil(hdr_metadata.extended_range->desired_headroom * ref_luma));
     }
     wp_image_description_creator_params_v1_set_max_cll(creator, cll);
     wp_image_description_creator_params_v1_set_max_fall(creator, fall);
