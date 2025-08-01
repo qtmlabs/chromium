@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simon Ser <contact@emersion.fr>
+Date: Thu, 13 Mar 2025 18:30:46 +0100
+Subject: color-management-v1: fix typo in feature.windows_scrgb
+
+The request is named create_windows_scrgb.
+
+Signed-off-by: Simon Ser <contact@emersion.fr>
+
+diff --git a/staging/color-management/color-management-v1.xml b/staging/color-management/color-management-v1.xml
+index 7f8da78f1238d23fcce195d63e650209d8e78799..ee482c5af1ae0cd78219f1f64baab87840e32a86 100644
+--- a/staging/color-management/color-management-v1.xml
++++ b/staging/color-management/color-management-v1.xml
+@@ -149,7 +149,7 @@
+         </description>
+       </entry>
+       <entry name="windows_scrgb" value="7"
+-             summary="get_windows_scrgb request"/>
++             summary="create_windows_scrgb request"/>
+     </enum>
+ 
+     <enum name="primaries">
