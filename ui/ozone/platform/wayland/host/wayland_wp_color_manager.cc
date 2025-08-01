@@ -6,6 +6,8 @@
 
 #include <color-management-v1-client-protocol.h>
 
+#include <cmath>
+
 #include "base/environment.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
@@ -319,6 +321,13 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
       if (cta_861_3.max_frame_average_light_level > 0) {
         fall = cta_861_3.max_frame_average_light_level;
       }
+    } else if (hdr_metadata.extended_range) {
+      float reference_lum =
+          color_space.IsAffectedBySDRWhiteLevel() ? 203.f : 80.f;
+      wp_image_description_creator_params_v1_set_max_cll(
+          creator,
+          static_cast<uint32_t>(std::ceil(
+              hdr_metadata.extended_range->desired_headroom * reference_lum)));
     }
     wp_image_description_creator_params_v1_set_max_cll(creator, cll);
     wp_image_description_creator_params_v1_set_max_fall(creator, fall);
