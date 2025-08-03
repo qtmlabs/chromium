@@ -238,6 +238,21 @@ void WaylandScreen::AddOrUpdateDisplay(const WaylandOutput::Metrics& metrics) {
   }
   color_spaces.SetOutputBufferFormats(image_format_no_alpha_.value(),
                                       image_format_alpha_.value());
+  for (const auto color_usage :
+       {gfx::ContentColorUsage::kSRGB, gfx::ContentColorUsage::kWideColorGamut,
+        gfx::ContentColorUsage::kHDR}) {
+    for (const bool needs_alpha : {false, true}) {
+      if (needs_alpha && image_format_hdr_ == gfx::BufferFormat::RGBA_1010102) {
+        continue;
+      }
+      auto color_space =
+          color_spaces.GetOutputColorSpace(color_usage, needs_alpha);
+      if (color_space.IsHDR()) {
+        color_spaces.SetOutputColorSpaceAndBufferFormat(
+            color_usage, needs_alpha, color_space, image_format_hdr_.value());
+      }
+    }
+  }
   changed_display.SetColorSpaces(color_spaces);
 
   // There are 2 cases where |changed_display| must be set as primary:
