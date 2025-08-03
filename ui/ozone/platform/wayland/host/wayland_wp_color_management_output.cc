@@ -8,6 +8,7 @@
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_output.h"
+#include "ui/ozone/platform/wayland/host/wayland_wp_color_manager.h"
 
 namespace ui {
 
@@ -50,8 +51,8 @@ void WaylandWpColorManagementOutput::OnImageDescription(
   }
   CHECK_EQ(image_description, image_description_);
 
-  display_color_spaces_ =
-      gfx::DisplayColorSpaces(image_description->gfx_color_space());
+  auto color_space = image_description->gfx_color_space();
+  display_color_spaces_ = gfx::DisplayColorSpaces(color_space);
 
   // Set HDR metadata and derive luminance values.
   const auto& hdr_metadata = image_description->hdr_metadata();
@@ -68,6 +69,45 @@ void WaylandWpColorManagementOutput::OnImageDescription(
     if (sdr_nits > 0.f) {
       display_color_spaces_.SetHDRMaxLuminanceRelative(peak_brightness /
                                                        sdr_nits);
+    }
+  }
+
+  if (color_space.IsHDR()) {
+    gfx::ColorSpace::TransferID sdr_transfer =
+        gfx::ColorSpace::TransferID::INVALID;
+    if (connection_->wp_color_manager()->IsSupportedTransferFunction(
+            WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB)) {
+      sdr_transfer = gfx::ColorSpace::TransferID::SRGB;
+    } else if (connection_->wp_color_manager()->IsSupportedFeature(
+                   WP_COLOR_MANAGER_V1_FEATURE_SET_TF_POWER) ||
+               connection_->wp_color_manager()->IsSupportedTransferFunction(
+                   WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22)) {
+      sdr_transfer = gfx::ColorSpace::TransferID::GAMMA22;
+    }
+
+    gfx::ColorSpace::PrimaryID sdr_primaries =
+        gfx::ColorSpace::PrimaryID::INVALID;
+    if (connection_->wp_color_manager()->IsSupportedFeature(
+            WP_COLOR_MANAGER_V1_FEATURE_SET_PRIMARIES) ||
+        connection_->wp_color_manager()->IsSupportedPrimaries(
+            WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3)) {
+      sdr_primaries = gfx::ColorSpace::PrimaryID::P3;
+    } else if (connection_->wp_color_manager()->IsSupportedPrimaries(
+                   WP_COLOR_MANAGER_V1_PRIMARIES_SRGB)) {
+      sdr_primaries = gfx::ColorSpace::PrimaryID::BT709;
+    }
+
+    gfx::ColorSpace sdr_color_space(sdr_primaries, sdr_transfer);
+    if (sdr_color_space.IsValid()) {
+      for (const auto color_usage : {gfx::ContentColorUsage::kSRGB,
+                                     gfx::ContentColorUsage::kWideColorGamut}) {
+        for (const bool needs_alpha : {false, true}) {
+          auto buffer_format = display_color_spaces_.GetOutputBufferFormat(
+              color_usage, needs_alpha);
+          display_color_spaces_.SetOutputColorSpaceAndBufferFormat(
+              color_usage, needs_alpha, sdr_color_space, buffer_format);
+        }
+      }
     }
   }
 
