@@ -101,10 +101,6 @@ WaylandScreen::WaylandScreen(WaylandConnection* connection)
     if (!image_format_alpha_ && format == viz::SinglePlaneFormat::kBGRA_8888) {
       image_format_alpha_ = viz::SinglePlaneFormat::kBGRA_8888;
     }
-
-    if (image_format_alpha_ && image_format_hdr_) {
-      break;
-    }
   }
 
   // If no buffer formats are found (neither wl_drm nor zwp_linux_dmabuf are
