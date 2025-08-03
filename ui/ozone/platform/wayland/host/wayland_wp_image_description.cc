@@ -8,6 +8,7 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/notimplemented.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/modules/skcms/skcms.h"
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_wp_color_manager.h"
@@ -120,6 +121,52 @@ bool TransferIsPowerCurve(gfx::ColorSpace::TransferID transfer) {
   }
 }
 
+bool IsColorSpaceTooWide(const skcms_ICCProfile* color_profile) {
+  if (!color_profile) {
+    return false;
+  }
+
+  skcms_ICCProfile sc_rgb = *skcms_sRGB_profile();
+  skcms_SetTransferFunction(&sc_rgb, skcms_Identity_TransferFunction());
+
+  std::array<std::array<uint8_t, 3>, 3> in;
+  std::ranges::fill(in[0], 0);
+  std::ranges::fill(in[1], 0);
+  std::ranges::fill(in[2], 0);
+  in[0][0] = 255;
+  in[1][1] = 255;
+  in[2][2] = 255;
+
+  std::array<std::array<float, 3>, 3> out;
+  bool color_conversion_successful = skcms_Transform(
+      in.data(), skcms_PixelFormat_RGB_888, skcms_AlphaFormat_Unpremul,
+      color_profile, out.data(), skcms_PixelFormat_RGB_fff,
+      skcms_AlphaFormat_Unpremul, &sc_rgb, 3);
+  DCHECK(color_conversion_successful);
+  const float score = out[0][0] * out[1][1] * out[2][2];
+
+  return score >= 1.425;
+}
+
+bool IsColorSpaceTooWide(const gfx::ColorSpace& color_space) {
+  if (!color_space.IsValid()) {
+    return false;
+  }
+
+  if (color_space.IsHDR()) {
+    return true;
+  }
+
+  sk_sp<SkColorSpace> sk_color_space = color_space.ToSkColorSpace();
+  if (!sk_color_space) {
+    return false;
+  }
+
+  skcms_ICCProfile color_profile;
+  sk_color_space->toProfile(&color_profile);
+  return IsColorSpaceTooWide(&color_profile);
+}
+
 }  // namespace
 
 WaylandWpImageDescription::WaylandWpImageDescription(
@@ -149,6 +196,51 @@ WaylandWpImageDescription::AsDisplayColorSpaces() const {
   auto display_color_spaces = gfx::DisplayColorSpaces(color_space_);
   display_color_spaces.SetSDRMaxLuminanceNits(sdr_max_luminance_nits_);
   display_color_spaces.SetHDRMaxLuminanceRelative(hdr_max_luminance_relative_);
+
+  if (IsColorSpaceTooWide(color_space_)) {
+    gfx::ColorSpace::TransferID sdr_transfer =
+        gfx::ColorSpace::TransferID::INVALID;
+    if (connection_->wp_color_manager()->IsSupportedTransferFunction(
+            WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB)) {
+      sdr_transfer = gfx::ColorSpace::TransferID::SRGB;
+    } else if (connection_->wp_color_manager()->IsSupportedFeature(
+                   WP_COLOR_MANAGER_V1_FEATURE_SET_TF_POWER) ||
+               connection_->wp_color_manager()->IsSupportedTransferFunction(
+                   WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22)) {
+      sdr_transfer = gfx::ColorSpace::TransferID::GAMMA22;
+    }
+
+    gfx::ColorSpace::PrimaryID sdr_primaries =
+        gfx::ColorSpace::PrimaryID::INVALID;
+    if (connection_->wp_color_manager()->IsSupportedFeature(
+            WP_COLOR_MANAGER_V1_FEATURE_SET_PRIMARIES) ||
+        connection_->wp_color_manager()->IsSupportedPrimaries(
+            WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3)) {
+      sdr_primaries = gfx::ColorSpace::PrimaryID::P3;
+    } else if (connection_->wp_color_manager()->IsSupportedPrimaries(
+                   WP_COLOR_MANAGER_V1_PRIMARIES_SRGB)) {
+      sdr_primaries = gfx::ColorSpace::PrimaryID::BT709;
+    }
+
+    gfx::ColorSpace sdr_color_space(sdr_primaries, sdr_transfer);
+    if (sdr_color_space.IsValid()) {
+      for (const auto color_usage : {gfx::ContentColorUsage::kSRGB,
+                                     gfx::ContentColorUsage::kWideColorGamut,
+                                     gfx::ContentColorUsage::kHDR}) {
+        if (color_usage == gfx::ContentColorUsage::kHDR &&
+            display_color_spaces.SupportsHDR()) {
+          continue;
+        }
+        for (const bool needs_alpha : {false, true}) {
+          auto buffer_format =
+              display_color_spaces.GetOutputFormat(color_usage, needs_alpha);
+          display_color_spaces.SetOutputColorSpaceAndFormat(
+              color_usage, needs_alpha, sdr_color_space, buffer_format);
+        }
+      }
+    }
+  }
+
   return base::MakeRefCounted<gfx::DisplayColorSpacesRef>(
       std::move(display_color_spaces));
 }
