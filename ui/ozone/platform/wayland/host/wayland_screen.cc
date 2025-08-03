@@ -91,7 +91,7 @@ WaylandScreen::WaylandScreen(WaylandConnection* connection)
 
     // RGBA_8888 is the preferred format.
     if (format == gfx::BufferFormat::RGBA_8888)
-      image_format_alpha_ = gfx::BufferFormat::RGBA_8888;
+      image_format_alpha_ = format;
 
     if (format == gfx::BufferFormat::RGBA_F16)
       image_format_hdr_ = format;
@@ -100,11 +100,7 @@ WaylandScreen::WaylandScreen(WaylandConnection* connection)
       image_format_hdr_ = format;
 
     if (!image_format_alpha_ && format == gfx::BufferFormat::BGRA_8888)
-      image_format_alpha_ = gfx::BufferFormat::BGRA_8888;
-
-    if (image_format_alpha_ && image_format_hdr_) {
-      break;
-    }
+      image_format_alpha_ = format;
   }
 
   // If no buffer formats are found (neither wl_drm nor zwp_linux_dmabuf are
