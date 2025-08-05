@@ -21,8 +21,9 @@ namespace font_service {
 namespace internal {
 
 FontServiceThread::FontServiceThread()
-    : task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
-          {base::TaskPriority::USER_BLOCKING, base::MayBlock()})) {}
+    : task_runner_(base::ThreadPool::CreateSingleThreadTaskRunner(
+          {base::TaskPriority::USER_BLOCKING, base::MayBlock()},
+          base::SingleThreadTaskRunnerThreadMode::DEDICATED)) {}
 
 FontServiceThread::~FontServiceThread() {
   // Ensure the remote is unbound on the appropriate sequence.
