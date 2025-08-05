@@ -14,7 +14,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/synchronization/waitable_event.h"
-#include "base/task/sequenced_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "components/services/font/public/mojom/font_service.mojom.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -202,7 +202,7 @@ class FontServiceThread : public base::RefCountedThreadSafe<FontServiceThread> {
   std::set<raw_ptr<base::WaitableEvent, SetExperimental>>
       pending_waitable_events_;
 
-  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  const scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
 }  // namespace internal
