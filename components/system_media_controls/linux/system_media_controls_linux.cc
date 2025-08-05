@@ -217,6 +217,17 @@ void SystemMediaControlsLinux::SetPlaybackStatus(PlaybackStatus value) {
   } else {
     StopPositionUpdateTimer();
   }
+
+  const bool prev_enabled = enabled_;
+  enabled_ = value != PlaybackStatus::kStopped;
+
+  if (enabled_ != prev_enabled && service_ready_) {
+    if (enabled_) {
+      RequestOwnership();
+    } else {
+      ReleaseOwnership();
+    }
+  }
 }
 
 void SystemMediaControlsLinux::SetID(const std::string* value) {
@@ -392,25 +403,32 @@ void SystemMediaControlsLinux::OnExported(const std::string& interface_name,
 }
 
 void SystemMediaControlsLinux::OnInitialized(bool success) {
-  if (success) {
-    bus_->RequestOwnership(
-        service_name_, dbus::Bus::ServiceOwnershipOptions::REQUIRE_PRIMARY,
-        base::BindRepeating(&SystemMediaControlsLinux::OnOwnership,
-                            base::Unretained(this)));
-  }
-}
-
-void SystemMediaControlsLinux::OnOwnership(const std::string& service_name,
-                                           bool success) {
   if (!success) {
     return;
   }
 
   service_ready_ = true;
 
+  if (enabled_) {
+    RequestOwnership();
+  }
+
   for (SystemMediaControlsObserver& obs : observers_) {
     obs.OnServiceReady();
   }
+}
+
+void SystemMediaControlsLinux::RequestOwnership() {
+  bus_->RequestOwnership(service_name_,
+                         dbus::Bus::ServiceOwnershipOptions::REQUIRE_PRIMARY,
+                         base::DoNothing());
+}
+
+void SystemMediaControlsLinux::ReleaseOwnership() {
+  bus_->GetDBusTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(base::IgnoreResult(&dbus::Bus::ReleaseOwnership), bus_,
+                     service_name_));
 }
 
 void SystemMediaControlsLinux::Next(
