@@ -115,7 +115,8 @@ class COMPONENT_EXPORT(SYSTEM_MEDIA_CONTROLS) SystemMediaControlsLinux
                   const std::string& method_name,
                   bool success);
   void OnInitialized(bool success);
-  void OnOwnership(const std::string& service_name, bool success);
+  void RequestOwnership();
+  void ReleaseOwnership();
 
   // org.mpris.MediaPlayer2.Player interface.
   void Next(dbus::MethodCall* method_call,
@@ -182,8 +183,11 @@ class COMPONENT_EXPORT(SYSTEM_MEDIA_CONTROLS) SystemMediaControlsLinux
   // True if we have started creating the DBus service.
   bool started_ = false;
 
-  // True if we have finished creating the DBus service and received ownership.
+  // True if we have finished creating the DBus service.
   bool service_ready_ = false;
+
+  // True if we should acquire ownership.
+  bool enabled_ = false;
 
   // A temporary file containing the thumbnail image.
   base::SequenceBound<base::ScopedTempFile> thumbnail_;
