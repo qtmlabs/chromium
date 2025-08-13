@@ -111,6 +111,24 @@ void WaylandWpColorManagementOutput::OnImageDescription(
     }
   }
 
+  if (display_color_spaces_.SupportsHDR() &&
+      (connection_->wp_color_manager()->IsSupportedFeature(
+           WP_COLOR_MANAGER_V1_FEATURE_SET_PRIMARIES) ||
+       connection_->wp_color_manager()->IsSupportedPrimaries(
+           WP_COLOR_MANAGER_V1_PRIMARIES_SRGB)) &&
+      (connection_->wp_color_manager()->IsSupportedFeature(
+           WP_COLOR_MANAGER_V1_FEATURE_SET_TF_POWER) ||
+       connection_->wp_color_manager()->IsSupportedTransferFunction(
+           WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR))) {
+    for (const bool needs_alpha : {false, true}) {
+      auto buffer_format = display_color_spaces_.GetOutputBufferFormat(
+          gfx::ContentColorUsage::kHDR, needs_alpha);
+      display_color_spaces_.SetOutputColorSpaceAndBufferFormat(
+          gfx::ContentColorUsage::kHDR, needs_alpha,
+          gfx::ColorSpace::CreateSRGBLinear(), buffer_format);
+    }
+  }
+
   wayland_output_->TriggerDelegateNotifications();
 }
 
