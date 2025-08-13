@@ -174,6 +174,23 @@ WaylandWpImageDescription::AsDisplayColorSpaces() const {
     }
   }
 
+  if (display_color_spaces.SupportsHDR() &&
+      (connection_->wp_color_manager()->IsSupportedFeature(
+           WP_COLOR_MANAGER_V1_FEATURE_SET_PRIMARIES) ||
+       connection_->wp_color_manager()->IsSupportedPrimaries(
+           WP_COLOR_MANAGER_V1_PRIMARIES_SRGB)) &&
+      (connection_->wp_color_manager()->IsSupportedFeature(
+           WP_COLOR_MANAGER_V1_FEATURE_SET_TF_POWER) ||
+       connection_->wp_color_manager()->IsSupportedTransferFunction(
+           WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR))) {
+    for (const bool needs_alpha : {false, true}) {
+      display_color_spaces.SetOutputColorSpaceAndFormat(
+          gfx::ContentColorUsage::kHDR, needs_alpha,
+          gfx::ColorSpace::CreateSRGBLinear(),
+          viz::SinglePlaneFormat::kRGBA_F16);
+    }
+  }
+
   return base::MakeRefCounted<gfx::DisplayColorSpacesRef>(
       std::move(display_color_spaces));
 }
