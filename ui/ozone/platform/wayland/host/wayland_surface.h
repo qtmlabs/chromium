@@ -20,6 +20,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/gpu_fence_handle.h"
+#include "ui/gfx/hdr_metadata.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/overlay_priority_hint.h"
 #include "ui/gfx/overlay_transform.h"
@@ -38,6 +39,7 @@ class WaylandConnection;
 class WaylandOutput;
 class WaylandWindow;
 class WaylandBufferHandle;
+class WaylandWpColorManagementSurface;
 class WaylandZcrColorManagementSurface;
 
 // Wrapper of a wl_surface, owned by a WaylandWindow or a WlSubsurface.
@@ -65,6 +67,10 @@ class WaylandSurface {
 
   const std::vector<uint32_t>& entered_outputs() const {
     return entered_outputs_;
+  }
+
+  WaylandWpColorManagementSurface* wp_color_management_surface() const {
+    return wp_color_management_surface_.get();
   }
 
   // Requests an explicit release for the next commit.
@@ -187,8 +193,9 @@ class WaylandSurface {
   // be removed.
   void RemoveEnteredOutput(uint32_t id);
 
-  // Set surface ColorSpace
-  void set_color_space(gfx::ColorSpace color_space);
+  // Set surface ColorSpace and HDR metadata.
+  void SetImageDescription(const gfx::ColorSpace& color_space,
+                           const gfx::HDRMetadata& hdr_metadata);
 
   // Validates the |pending_state_| and generates the corresponding requests.
   // Then copy |pending_states_| to |states_|.
@@ -251,8 +258,9 @@ class WaylandSurface {
     std::vector<gfx::Rect> opaque_region_px;
     std::vector<gfx::Rect> input_region_px;
 
-    // The current color space of the surface.
-    scoped_refptr<WaylandZcrColorSpace> color_space = nullptr;
+    // The current color space and HDR metadata of the surface.
+    gfx::ColorSpace color_space;
+    gfx::HDRMetadata hdr_metadata;
 
     // The acquire gpu fence to associate with the surface buffer.
     gfx::GpuFenceHandle acquire_fence;
@@ -352,6 +360,7 @@ class WaylandSurface {
   wl::Object<wp_fractional_scale_v1> fractional_scale_;
   std::unique_ptr<WaylandZcrColorManagementSurface>
       zcr_color_management_surface_;
+  std::unique_ptr<WaylandWpColorManagementSurface> wp_color_management_surface_;
   ExplicitReleaseCallback next_explicit_release_request_;
 
   // A cached copy of connection->supports_viewporter_surface_scaling(). While

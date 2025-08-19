@@ -53,6 +53,7 @@ class WaylandCursorBufferListener;
 class WaylandCursorPosition;
 class WaylandCursorShape;
 class WaylandDataDeviceManager;
+class WaylandWpColorManager;
 class WaylandDataDragController;
 class WaylandEventSource;
 class WaylandOutputManager;
@@ -169,6 +170,10 @@ class WaylandConnection {
 
   WaylandZcrColorManager* zcr_color_manager() const {
     return zcr_color_manager_.get();
+  }
+
+  WaylandWpColorManager* wp_color_manager() const {
+    return wp_color_manager_.get();
   }
 
   WaylandCursorShape* wayland_cursor_shape() const {
@@ -322,6 +327,7 @@ class WaylandConnection {
   friend class WaylandZwpRelativePointerManager;
   friend class WaylandZcrColorManager;
   friend class WaylandCursorShape;
+  friend class WaylandWpColorManager;
   friend class XdgActivation;
   friend class XdgForeignWrapper;
   friend class XdgSessionManager;
@@ -437,6 +443,7 @@ class WaylandConnection {
   std::unique_ptr<WaylandOutputManager> output_manager_;
   std::unique_ptr<WaylandCursorPosition> cursor_position_;
   std::unique_ptr<WaylandZcrColorManager> zcr_color_manager_;
+  std::unique_ptr<WaylandWpColorManager> wp_color_manager_;
   std::unique_ptr<WaylandCursorShape> cursor_shape_;
   std::unique_ptr<WaylandZwpPointerConstraints> zwp_pointer_constraints_;
   std::unique_ptr<WaylandZwpRelativePointerManager>
