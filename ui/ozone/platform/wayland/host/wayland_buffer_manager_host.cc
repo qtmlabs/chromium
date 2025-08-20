@@ -156,13 +156,6 @@ void WaylandBufferManagerHost::CreateDmabufBasedBuffer(
     dma_buffers_.emplace(buffer_id, dup(fd.get()));
   }
 
-  if (auto* color_manager = connection_->wp_color_manager()) {
-    // Cache the image description early so it's available when the
-    // surface is initialized.
-    color_manager->GetImageDescription(color_space, hdr_metadata,
-                                       base::DoNothing());
-  }
-
   // Check if any of the surfaces has already had a buffer with the same id.
   auto result = buffer_backings_.emplace(
       buffer_id, std::make_unique<WaylandBufferBackingDmabuf>(
