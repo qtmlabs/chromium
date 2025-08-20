@@ -13,6 +13,7 @@
 #include "base/containers/flat_map.h"
 #include "base/containers/lru_cache.h"
 #include "base/functional/callback.h"
+#include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "ui/gfx/color_space.h"
@@ -42,10 +43,9 @@ class WaylandWpColorManager
   WaylandWpColorManager& operator=(const WaylandWpColorManager&) = delete;
   ~WaylandWpColorManager();
 
-  void GetImageDescription(
+  scoped_refptr<WaylandWpImageDescription> GetImageDescription(
       const gfx::ColorSpace& color_space,
-      const gfx::HDRMetadata& hdr_metadata,
-      WaylandWpImageDescription::CreationCallback callback);
+      const gfx::HDRMetadata& hdr_metadata);
 
   wl::Object<wp_color_management_output_v1> CreateColorManagementOutput(
       wl_output* output);
@@ -87,11 +87,6 @@ class WaylandWpColorManager
                                         uint32_t primaries);
   static void OnDone(void* data, wp_color_manager_v1* manager);
 
-  void OnImageDescriptionCreated(
-      const gfx::ColorSpace& color_space,
-      const gfx::HDRMetadata& hdr_metadata,
-      scoped_refptr<WaylandWpImageDescription> image_description);
-
   bool PopulateDescriptionCreator(
       wp_image_description_creator_params_v1* creator,
       const gfx::ColorSpace& color_space,
@@ -103,15 +98,6 @@ class WaylandWpColorManager
   // Cache of successfully created image descriptions.
   base::LRUCache<ImageDescription, scoped_refptr<WaylandWpImageDescription>>
       image_description_cache_{64};
-
-  // Callbacks for image descriptions that are being created.
-  base::flat_map<ImageDescription,
-                 std::vector<WaylandWpImageDescription::CreationCallback>>
-      pending_callbacks_;
-
-  // Holds the image description objects while their creation is pending.
-  base::flat_map<ImageDescription, scoped_refptr<WaylandWpImageDescription>>
-      pending_creations_;
 
   // Feature support, as bitsets.
   uint32_t supported_intents_ = 0;

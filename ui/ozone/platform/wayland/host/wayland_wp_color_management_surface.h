@@ -45,9 +45,6 @@ class WaylandWpColorManagementSurface {
       wp_color_management_surface_feedback_v1* feedback_surface,
       uint32_t identity);
 
-  void OnSetColorSpace(
-      scoped_refptr<WaylandWpImageDescription> image_description);
-
   const raw_ptr<WaylandSurface> wayland_surface_;
   const raw_ptr<WaylandConnection> connection_;
   wl::Object<wp_color_management_surface_v1> management_surface_;
