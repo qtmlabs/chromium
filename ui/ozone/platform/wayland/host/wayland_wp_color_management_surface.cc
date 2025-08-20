@@ -47,20 +47,13 @@ void WaylandWpColorManagementSurface::SetColorSpace(
   auto* color_manager = connection_->wp_color_manager();
   DCHECK(color_manager);
 
-  color_manager->GetImageDescription(
-      color_space, hdr_metadata,
-      base::BindOnce(&WaylandWpColorManagementSurface::OnSetColorSpace,
-                     weak_factory_.GetWeakPtr()));
-}
-
-void WaylandWpColorManagementSurface::OnSetColorSpace(
-    scoped_refptr<WaylandWpImageDescription> image_description) {
+  auto image_description =
+      color_manager->GetImageDescription(color_space, hdr_metadata);
   if (!image_description) {
     LOG(ERROR) << "Failed to get image description for color space.";
     return;
   }
 
-  auto* color_manager = connection_->wp_color_manager();
   wp_color_manager_v1_render_intent render_intent;
   if (color_manager->IsSupportedRenderIntent(
           WP_COLOR_MANAGER_V1_RENDER_INTENT_RELATIVE)) {
