@@ -51,9 +51,6 @@ class WaylandWpColorManagementSurface : public WaylandWpColorManager::Observer {
   void OnHdrEnabledChanged(bool hdr_enabled) override;
   void OnColorManagerDestroyed() override;
 
-  void OnSetColorSpace(
-      scoped_refptr<WaylandWpImageDescription> image_description);
-
   void OnImageDescription(
       scoped_refptr<WaylandWpImageDescription> image_description);
 
