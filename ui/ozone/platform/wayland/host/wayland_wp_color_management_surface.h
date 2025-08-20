@@ -52,9 +52,6 @@ class WaylandWpColorManagementSurface : public WaylandWpColorManager::Observer {
   void OnColorManagerDestroyed() override;
   void OnColorManagerReady() override;
 
-  void OnSetColorSpace(
-      scoped_refptr<WaylandWpImageDescription> image_description);
-
   void OnImageDescription(
       scoped_refptr<WaylandWpImageDescription> image_description);
 
