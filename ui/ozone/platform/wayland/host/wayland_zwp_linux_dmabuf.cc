@@ -322,6 +322,9 @@ void WaylandZwpLinuxDmabuf::OnMainDevice(void* data,
   // Prepare to receive new formats and modifiers
   self->supported_buffer_formats_with_modifiers_.clear();
 #endif  // defined(WAYLAND_GBM)
+
+  // Prepare to receive new formats and modifiers
+  self->supported_buffer_formats_with_modifiers_.clear();
 }
 
 void WaylandZwpLinuxDmabuf::OnTrancheDone(
