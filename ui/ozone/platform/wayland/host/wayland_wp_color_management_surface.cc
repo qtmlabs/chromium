@@ -8,6 +8,7 @@
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/notimplemented.h"
+#include "ui/base/ui_base_features.h"
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_surface.h"
@@ -86,6 +87,10 @@ void WaylandWpColorManagementSurface::OnPreferredChanged(
   auto* self = static_cast<WaylandWpColorManagementSurface*>(data);
   CHECK(self);
   CHECK_EQ(feedback_surface, self->feedback_surface_.get());
+
+  if (!base::FeatureList::IsEnabled(features::kWaylandPerSurfaceColorSpace)) {
+    return;
+  }
 
   // Reset the previous image description before creating a new one.
   // Per the color management protocol specification:

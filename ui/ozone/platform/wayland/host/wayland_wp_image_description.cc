@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/wayland/host/wayland_wp_image_description.h"
 
+#include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/notimplemented.h"
