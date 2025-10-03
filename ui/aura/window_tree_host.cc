@@ -666,10 +666,15 @@ void WindowTreeHost::OnDisplayMetricsChanged(const display::Display& display,
 
 void WindowTreeHost::OnDisplayColorSpacesChanged(
     scoped_refptr<gfx::DisplayColorSpacesRef> color_spaces) {
-  DCHECK(color_spaces);
   display_color_spaces_ = color_spaces;
   if (compositor_) {
-    compositor_->SetDisplayColorSpaces(color_spaces->color_spaces());
+    if (color_spaces) {
+      compositor_->SetDisplayColorSpaces(color_spaces->color_spaces());
+    } else {
+      display::Display display =
+          display::Screen::Get()->GetDisplayNearestWindow(window());
+      compositor_->SetDisplayColorSpaces(display.GetColorSpaces());
+    }
   }
 }
 

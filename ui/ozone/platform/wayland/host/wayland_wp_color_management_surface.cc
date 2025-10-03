@@ -126,11 +126,9 @@ void WaylandWpColorManagementSurface::OnHdrEnabledChanged(bool hdr_enabled) {
     return;
   }
 
-  auto display_color_spaces = hdr_enabled ? display_color_spaces_ : nullptr;
   root->OnDisplayColorSpacesChanged(
-      display_color_spaces
-          ? display_color_spaces
-          : base::MakeRefCounted<gfx::DisplayColorSpacesRef>());
+      hdr_enabled ? display_color_spaces_
+                  : base::MakeRefCounted<gfx::DisplayColorSpacesRef>());
 }
 
 void WaylandWpColorManagementSurface::OnColorManagerDestroyed() {
