@@ -13,7 +13,6 @@
 #include "base/logging.h"
 #include "base/nix/xdg_util.h"
 #include "ui/base/ui_base_features.h"
-#include "ui/gfx/hdr_metadata_agtm.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_output_manager.h"
 
@@ -102,28 +101,6 @@ TransferIdToTransferFunction(gfx::ColorSpace::TransferID transfer_id) {
       // These do not have a direct mapping in the Wayland protocol.
       return std::nullopt;
   }
-}
-
-float GetReferenceLuminance(const gfx::ColorSpace& color_space,
-                            const gfx::HDRMetadata& hdr_metadata) {
-  gfx::HdrMetadataAgtmParsed agtm;
-  if (hdr_metadata.agtm.has_value() && agtm.Parse(hdr_metadata.agtm.value())) {
-    return agtm.hdr_reference_white;
-  }
-
-  if (hdr_metadata.ndwl.has_value() && hdr_metadata.ndwl->nits > 0.f) {
-    return hdr_metadata.ndwl->nits;
-  }
-
-  if (color_space.GetTransferID() == gfx::ColorSpace::TransferID::PQ ||
-      color_space.GetTransferID() == gfx::ColorSpace::TransferID::HLG) {
-    auto sk_color_space = color_space.ToSkColorSpace();
-    skcms_TransferFunction transfer_fn;
-    sk_color_space->transferFn(&transfer_fn);
-    return transfer_fn.a;
-  }
-
-  return gfx::ColorSpace::kDefaultSDRWhiteLevel;
 }
 
 }  // namespace
@@ -264,7 +241,7 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
     return false;
   }
 
-  if (color_space.IsHDR()) {
+  if (hdr_metadata.IsValid()) {
     if (IsSupportedFeature(
             WP_COLOR_MANAGER_V1_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES)) {
       if (hdr_metadata.smpte_st_2086 && hdr_metadata.smpte_st_2086->IsValid()) {
@@ -284,12 +261,6 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
             creator, static_cast<uint32_t>(smpte_st_2086.luminance_min * 10000),
             static_cast<uint32_t>(smpte_st_2086.luminance_max));
       }
-    }
-
-    if (IsSupportedFeature(WP_COLOR_MANAGER_V1_FEATURE_SET_LUMINANCES)) {
-      wp_image_description_creator_params_v1_set_luminances(
-          creator, 0, gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata),
-          GetReferenceLuminance(color_space, hdr_metadata));
     }
 
     if (hdr_metadata.cta_861_3 && hdr_metadata.cta_861_3->IsValid()) {
