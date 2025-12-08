@@ -267,23 +267,21 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
       }
     }
 
-    const float ref_luma = gfx::HDRMetadata::GetWaylandReferenceLuminance(
-        color_space, hdr_metadata);
     if (IsSupportedFeature(WP_COLOR_MANAGER_V1_FEATURE_SET_LUMINANCES)) {
       wp_image_description_creator_params_v1_set_luminances(
           creator, 0, gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata),
-          ref_luma);
+          gfx::HDRMetadata::GetWaylandReferenceLuminance(color_space, hdr_metadata));
     }
 
-    uint32_t cll = ref_luma;
-    uint32_t fall = ref_luma;
     if (hdr_metadata.cta_861_3 && hdr_metadata.cta_861_3->IsValid()) {
       const auto& cta_861_3 = *hdr_metadata.cta_861_3;
       if (cta_861_3.max_content_light_level > 0) {
-        cll = cta_861_3.max_content_light_level;
+        wp_image_description_creator_params_v1_set_max_cll(
+            creator, cta_861_3.max_content_light_level);
       }
       if (cta_861_3.max_frame_average_light_level > 0) {
-        fall = cta_861_3.max_frame_average_light_level;
+        wp_image_description_creator_params_v1_set_max_fall(
+            creator, cta_861_3.max_frame_average_light_level);
       }
     } else if (hdr_metadata.extended_range) {
       float reference_lum =
@@ -293,8 +291,6 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
           static_cast<uint32_t>(std::ceil(
               hdr_metadata.extended_range->desired_headroom * reference_lum)));
     }
-    wp_image_description_creator_params_v1_set_max_cll(creator, cll);
-    wp_image_description_creator_params_v1_set_max_fall(creator, fall);
   }
 
   return true;
