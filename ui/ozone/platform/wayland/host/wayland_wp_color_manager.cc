@@ -245,7 +245,7 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
     return false;
   }
 
-  if (color_space.IsHDR()) {
+  if (hdr_metadata.IsValid()) {
     if (IsSupportedFeature(
             WP_COLOR_MANAGER_V1_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES)) {
       if (hdr_metadata.smpte_st_2086 && hdr_metadata.smpte_st_2086->IsValid()) {
@@ -265,12 +265,6 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
             creator, static_cast<uint32_t>(smpte_st_2086.luminance_min * 10000),
             static_cast<uint32_t>(smpte_st_2086.luminance_max));
       }
-    }
-
-    if (IsSupportedFeature(WP_COLOR_MANAGER_V1_FEATURE_SET_LUMINANCES)) {
-      wp_image_description_creator_params_v1_set_luminances(
-          creator, 0, gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata),
-          gfx::HDRMetadata::GetWaylandReferenceLuminance(color_space, hdr_metadata));
     }
 
     if (hdr_metadata.cta_861_3 && hdr_metadata.cta_861_3->IsValid()) {
