@@ -85,6 +85,10 @@ std::vector<uint64_t> DrmModifiersFilterVulkan::Filter(
 
   base::flat_set<uint64_t> vulkan_modifiers;
   for (const auto& props : modifier_props) {
+    if (props.drmFormatModifierPlaneCount > 1 &&
+        vulkan_format != VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) {
+      continue;
+    }
     vulkan_modifiers.insert(props.drmFormatModifier);
   }
   std::vector<uint64_t> intersection;
