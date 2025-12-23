@@ -3839,6 +3839,17 @@
       "features": [
         "validate_max_per_stage_uniform_blocks_at_compile_time"
       ]
+    },
+    {
+      "id": 1000,
+      "description": "Disable Intel GPU fast clear on Linux",
+      "os": {
+        "type": "linux"
+      },
+      "vendor_id": "0x8086",
+      "features": [
+        "intel_debug_nofc"
+      ]
     }
   ]
 }
