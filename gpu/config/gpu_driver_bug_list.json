@@ -3813,6 +3813,17 @@
       "features": [
         "dont_change_base_level_for_npot_immutable_textures"
       ]
+    },
+    {
+      "id": 1000,
+      "description": "Disable Intel GPU fast clear on Linux",
+      "os": {
+        "type": "linux"
+      },
+      "vendor_id": "0x8086",
+      "features": [
+        "intel_debug_nofc"
+      ]
     }
   ]
 }

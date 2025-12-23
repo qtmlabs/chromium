@@ -4,6 +4,7 @@
 
 #include "gpu/ipc/service/gpu_init.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <optional>
@@ -13,6 +14,7 @@
 #include "base/base_paths.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
+#include "base/environment.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
@@ -432,6 +434,14 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   // info.
   gpu_feature_info_ = ComputeGpuFeatureInfo(gpu_info_, gpu_preferences_,
                                             command_line, &needs_more_info);
+
+  if (std::ranges::contains(
+          gpu_feature_info_.enabled_gpu_driver_bug_workarounds,
+          INTEL_DEBUG_NOFC)) {
+    auto env = base::Environment::Create();
+    env->SetVar("INTEL_DEBUG",
+                env->GetVar("INTEL_DEBUG").value_or("") + ",nofc");
+  }
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
   SetupGLDisplayManagerEGL(gpu_info_, gpu_feature_info_);
