@@ -96,6 +96,7 @@ force_rgb10a2_overlay_support
 force_update_scissor_state_when_binding_fbo0
 gl_clear_broken
 init_gl_position_in_vertex_shader
+intel_debug_nofc
 limit_d3d11_video_decoder_to_11_0
 max_3d_array_texture_size_1024
 max_msaa_sample_count_2
