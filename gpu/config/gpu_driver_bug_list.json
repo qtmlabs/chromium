@@ -3801,6 +3801,17 @@
       "features": [
         "recreate_fbo_upon_flush"
       ]
+    },
+    {
+      "id": 1000,
+      "description": "Disable Intel GPU fast clear on Linux",
+      "os": {
+        "type": "linux"
+      },
+      "vendor_id": "0x8086",
+      "features": [
+        "intel_debug_nofc"
+      ]
     }
   ]
 }
