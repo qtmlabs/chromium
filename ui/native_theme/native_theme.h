@@ -509,6 +509,7 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
   }
   void set_preferred_color_scheme(PreferredColorScheme preferred_color_scheme) {
     preferred_color_scheme_ = preferred_color_scheme;
+    preferred_color_scheme_overridden_ = true;
   }
 
   PreferredContrast preferred_contrast() const { return preferred_contrast_; }
@@ -525,6 +526,7 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
   std::optional<SkColor> user_color() const { return user_color_; }
   void set_user_color(std::optional<SkColor> user_color) {
     user_color_ = user_color;
+    user_color_overridden_ = true;
   }
 
   std::optional<ColorProviderKey::SchemeVariant> scheme_variant() const {
@@ -607,10 +609,12 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
       ColorProviderKey::ForcedColors::kNone;
   PreferredColorScheme preferred_color_scheme_ =
       PreferredColorScheme::kNoPreference;
+  bool preferred_color_scheme_overridden_ = false;
   PreferredContrast preferred_contrast_ = PreferredContrast::kNoPreference;
   bool prefers_reduced_transparency_ = false;
   bool inverted_colors_ = false;
   std::optional<SkColor> user_color_;
+  bool user_color_overridden_ = false;
   std::optional<ColorProviderKey::SchemeVariant> scheme_variant_;
   ColorProviderKey::UserColorSource preferred_color_source_ =
       ColorProviderKey::UserColorSource::kAccent;
