@@ -536,7 +536,8 @@ bool NativeTheme::UpdateVariablesForToolkitSettings() {
     forced_colors_ = new_forced_colors;
     updated = true;
   }
-  if (preferred_color_scheme() != new_preferred_color_scheme) {
+  if (preferred_color_scheme() != new_preferred_color_scheme &&
+      !preferred_color_scheme_overridden_) {
     preferred_color_scheme_ = new_preferred_color_scheme;
     updated = true;
   }
@@ -552,7 +553,7 @@ bool NativeTheme::UpdateVariablesForToolkitSettings() {
     inverted_colors_ = new_inverted_colors;
     updated = true;
   }
-  if (user_color() != new_user_color) {
+  if (user_color() != new_user_color && !user_color_overridden_) {
     user_color_ = new_user_color;
     updated = true;
   }
