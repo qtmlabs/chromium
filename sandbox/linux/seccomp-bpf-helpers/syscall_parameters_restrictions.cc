@@ -76,6 +76,10 @@
 #define PROT_BTI 0x10
 #endif
 
+#if !defined(F_DUPFD_QUERY)
+#define F_DUPFD_QUERY 1027
+#endif
+
 namespace {
 
 inline bool IsArchitectureX86_64() {
@@ -313,7 +317,8 @@ ResultExpr RestrictFcntlCommands() {
               F_SETLKW,
               F_GETLK,
               F_DUPFD,
-              F_DUPFD_CLOEXEC},
+              F_DUPFD_CLOEXEC,
+              F_DUPFD_QUERY},
              Allow())
       .Case(F_SETFL,
             If((long_arg & ~kAllowedMask) == 0, Allow()).Else(CrashSIGSYS()))
