@@ -6,10 +6,10 @@ Subject: Revert "egl: Add logic to select preferred display"
 This reverts commit ec6d62886345a11310bc01852c88ac0428c129cb.
 
 diff --git a/DEPS b/DEPS
-index da1d7cc5cebc00a91c9e08e9adb7f4fbfc7f14eb..5d99e7aa7cb55c232f50a61bd200e146f49052d2 100644
+index bc12d535a837b0c51bee4f71a96211996d9fab28..44513b27bf785309cc340cc2c4e41611f638b1aa 100644
 --- a/DEPS
 +++ b/DEPS
-@@ -859,7 +859,7 @@ deps = {
+@@ -862,7 +862,7 @@ deps = {
  
    'third_party/libdrm/src': {
      'url': Var('chromium_git') + '/chromiumos/third_party/libdrm.git@ad78bb591d02162d3b90890aa4d0a238b2a37cde',

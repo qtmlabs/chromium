@@ -149,10 +149,10 @@ index 18ac12e177bcad60bb1b9682122d300558d72e35..00000000000000000000000000000000
 -    Version 1, 2024-07-09 (Steven Noonan)
 -      - Initial draft
 diff --git a/include/EGL/eglext_angle.h b/include/EGL/eglext_angle.h
-index b8552d4688501112e5665b4dae3cbb3d44925876..abecba7a52b83ce0163b409b371821d334c195c1 100644
+index 9abe2ef6ba0c374eb0c0c088d913b87537f3131f..8f184fbe857a6ef82055344f3b1cc5481451d5e1 100644
 --- a/include/EGL/eglext_angle.h
 +++ b/include/EGL/eglext_angle.h
-@@ -107,13 +107,6 @@
+@@ -108,13 +108,6 @@
  #define EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE 0x34A5
  #endif /* EGL_ANGLE_platform_angle_vulkan */
  
@@ -167,71 +167,71 @@ index b8552d4688501112e5665b4dae3cbb3d44925876..abecba7a52b83ce0163b409b371821d3
  #define EGL_ANGLE_platform_angle_metal 1
  #define EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE 0x3489
 diff --git a/scripts/code_generation_hashes/Extension_files.json b/scripts/code_generation_hashes/Extension_files.json
-index 2d60f3354187b18a1a9937fa4eaa8290cbf57482..b806cb1e727ad43c44ea3ae37fdc7beaa4f24b25 100644
+index c5c0795f6000c27eb550540bb1c01f123028c871..f02955b3bbddd80a7248d3e53a884454d1892267 100644
 --- a/scripts/code_generation_hashes/Extension_files.json
 +++ b/scripts/code_generation_hashes/Extension_files.json
 @@ -2,7 +2,7 @@
    "doc/ExtensionSupport.md":
-     "f8d6abac8e14e204b5ef68f0b7f181eb",
+     "d2b01c702e39ac3612900dc9777d4676",
    "scripts/egl_angle_ext.xml":
--    "da48b515b2cfc3350dc57a37e305e61a",
-+    "823e73f646fb5563984f4db70c9ec6fe",
+-    "676627eae49a3ccadeafc3adbd7dba8d",
++    "534b368697b1c3bbbbece516178a92a0",
    "scripts/extension_data/intel_630_linux.json":
      "3b86832de6a7095f4617e273cba6d45e",
    "scripts/extension_data/intel_630_win10.json":
 diff --git a/scripts/code_generation_hashes/GL_EGL_WGL_loader.json b/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
-index ed4b79fb325a4e16f2489ab1471d459cb6850c4e..48f80027ab6e840e44f716683f5b38edad924e70 100644
+index 1a44cb90b61184ed8cf58f2494978463f414bd46..fd978d041a1f10a2882ea41312e922467aa4bd3b 100644
 --- a/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
 +++ b/scripts/code_generation_hashes/GL_EGL_WGL_loader.json
 @@ -1,6 +1,6 @@
  {
    "scripts/egl_angle_ext.xml":
--    "da48b515b2cfc3350dc57a37e305e61a",
-+    "823e73f646fb5563984f4db70c9ec6fe",
+-    "676627eae49a3ccadeafc3adbd7dba8d",
++    "534b368697b1c3bbbbece516178a92a0",
    "scripts/generate_loader.py":
      "93c78a8d11323fa311fed5118fbcf083",
    "scripts/gl_angle_ext.xml":
 diff --git a/scripts/code_generation_hashes/GL_EGL_entry_points.json b/scripts/code_generation_hashes/GL_EGL_entry_points.json
-index 56e77d6665af8a58aa7afbbb0c6fcbf604d83ec1..01c2f8fdd2963d92d1026ad33038045531240c73 100644
+index 20cf33936463d8330ce901955b3d62feab2f72d3..bdf6e6a3d181f86e9a612ba44fb04895749f812e 100644
 --- a/scripts/code_generation_hashes/GL_EGL_entry_points.json
 +++ b/scripts/code_generation_hashes/GL_EGL_entry_points.json
 @@ -1,6 +1,6 @@
  {
    "scripts/egl_angle_ext.xml":
--    "da48b515b2cfc3350dc57a37e305e61a",
-+    "823e73f646fb5563984f4db70c9ec6fe",
+-    "676627eae49a3ccadeafc3adbd7dba8d",
++    "534b368697b1c3bbbbece516178a92a0",
    "scripts/entry_point_packed_egl_enums.json":
      "a72ae855c6b403912103b519139951a1",
    "scripts/entry_point_packed_gl_enums.json":
 diff --git a/scripts/code_generation_hashes/interpreter_utils.json b/scripts/code_generation_hashes/interpreter_utils.json
-index 9495f6e3c41b46959b74bfffc9331aa8e961f4c7..185369d42131bf1b6943d189c3b8501b40517644 100644
+index 2c34c884ed637ef9ae3cb2f545ddf143a28feee3..4872d524456933e9e26b4d5af0c7c986cf80b1b9 100644
 --- a/scripts/code_generation_hashes/interpreter_utils.json
 +++ b/scripts/code_generation_hashes/interpreter_utils.json
 @@ -1,6 +1,6 @@
  {
    "scripts/egl_angle_ext.xml":
--    "da48b515b2cfc3350dc57a37e305e61a",
-+    "823e73f646fb5563984f4db70c9ec6fe",
+-    "676627eae49a3ccadeafc3adbd7dba8d",
++    "534b368697b1c3bbbbece516178a92a0",
    "scripts/gen_interpreter_utils.py":
      "7c21cda140a45527c02ddd003ebe7914",
    "scripts/gl_angle_ext.xml":
 diff --git a/scripts/code_generation_hashes/proc_table.json b/scripts/code_generation_hashes/proc_table.json
-index 84ae4639eb9ca4aacfc60a3ce08a13a3480463d8..b2c7dff22f9c335f3c359c2f594c8daac0e0d7ce 100644
+index 2a0edc754b42104a7ddfcc84ffd8b7bbeda82283..c3b422248f26db24e3f5faa7d27bb23ec43165be 100644
 --- a/scripts/code_generation_hashes/proc_table.json
 +++ b/scripts/code_generation_hashes/proc_table.json
 @@ -1,6 +1,6 @@
  {
    "scripts/egl_angle_ext.xml":
--    "da48b515b2cfc3350dc57a37e305e61a",
-+    "823e73f646fb5563984f4db70c9ec6fe",
+-    "676627eae49a3ccadeafc3adbd7dba8d",
++    "534b368697b1c3bbbbece516178a92a0",
    "scripts/gen_proc_table.py":
      "23ebf460dda78d2c21625e0d41d3cb97",
    "scripts/gl_angle_ext.xml":
 diff --git a/scripts/egl_angle_ext.xml b/scripts/egl_angle_ext.xml
-index 031ec65bec3d48bd065ff9ed490b9336cc117d4a..201ce4979fd0daab43b17579890364a9aab6dfd8 100644
+index 5ff7f83dcd72014797d9972f1fbe3809f4849d76..9cefccb989088e30ba8037ac32d8f4f22d3bdd06 100644
 --- a/scripts/egl_angle_ext.xml
 +++ b/scripts/egl_angle_ext.xml
-@@ -461,13 +461,6 @@
+@@ -462,13 +462,6 @@
                  <enum name="EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE"/>
              </require>
          </extension>
@@ -245,18 +245,16 @@ index 031ec65bec3d48bd065ff9ed490b9336cc117d4a..201ce4979fd0daab43b17579890364a9
          <extension name="EGL_ANGLE_robust_resource_initialization" supported="egl">
              <require>
                  <enum name="EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE"/>
-@@ -666,11 +659,6 @@
-     <enums namespace="EGL" start="0x34E0" end="0x34E0" vendor="ANGLE">
+@@ -668,9 +661,6 @@
          <enum value="0x34E0" name="EGL_SYNC_METAL_COMMANDS_SCHEDULED_ANGLE"/>
      </enums>
--    <enums namespace="EGL" start="0x34F0" end="0x34FF" vendor="ANGLE">
+     <enums namespace="EGL" start="0x34F0" end="0x34FF" vendor="ANGLE">
 -        <enum value="0x34F0" name="EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE"/>
 -        <enum value="0x34F1" name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE"/>
 -        <enum value="0x34F2" name="EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE"/>
--    </enums>
+         <enum value="0x34F8" name="EGL_CONTEXT_HARDENED_ANGLE"/>
+     </enums>
      <enums namespace="EGL" vendor="ANGLE">
-         <enum value="0x0001" name="EGL_LOW_POWER_ANGLE"/>
-         <enum value="0x0002" name="EGL_HIGH_POWER_ANGLE"/>
 diff --git a/src/common/vulkan/vulkan_icd.cpp b/src/common/vulkan/vulkan_icd.cpp
 index 70f75bcf1e67bf67d0cfb6a0fe0b2e164422b54f..bad3e01ba8a3a18b1b8434992008d4236cac9b5f 100644
 --- a/src/common/vulkan/vulkan_icd.cpp
@@ -489,10 +487,10 @@ index 333ed4341f83d357bd4fab88d495317e20ac2516..24545fe50422506df40ec12c49c679fc
      uint32_t driverApiVersion = 0;
  };
 diff --git a/src/gpu_info_util/SystemInfo_vulkan.cpp b/src/gpu_info_util/SystemInfo_vulkan.cpp
-index 8c400f625517c5c387643239665f6322e8fb8c14..c85cd625a3fa76bad682f6c89ce2afd216273e9c 100644
+index be3556445152b9d2d4df352adf537e120773b3ea..56ad00ee6a15261b4aedec6b74e6a4d518c4f353 100644
 --- a/src/gpu_info_util/SystemInfo_vulkan.cpp
 +++ b/src/gpu_info_util/SystemInfo_vulkan.cpp
-@@ -516,8 +516,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+@@ -520,8 +520,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
      const bool enableValidationLayers = false;
      vk::ScopedVkLoaderEnvironment scopedEnvironment(enableValidationLayers, preferredICD);
  
@@ -501,7 +499,7 @@ index 8c400f625517c5c387643239665f6322e8fb8c14..c85cd625a3fa76bad682f6c89ce2afd2
      // This implementation builds on top of the Vulkan API, but cannot assume the existence of the
      // Vulkan library.  ANGLE can be installed on versions of Android as old as Ice Cream Sandwich.
      // Therefore, we need to use dlopen()/dlsym() in order to see if Vulkan is installed on the
-@@ -554,13 +552,9 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+@@ -558,13 +556,9 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
          VkPhysicalDeviceDriverProperties driverProperties = {};
          driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
  
@@ -516,7 +514,7 @@ index 8c400f625517c5c387643239665f6322e8fb8c14..c85cd625a3fa76bad682f6c89ce2afd2
  
          VkPhysicalDeviceProperties &properties = properties2.properties;
          pfnGetPhysicalDeviceProperties(physicalDevices[i], &properties);
-@@ -577,8 +571,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
+@@ -581,8 +575,6 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
          gpu.vendorId       = properties.vendorID;
          gpu.deviceId       = properties.deviceID;
          gpu.deviceName     = properties.deviceName;
@@ -552,10 +550,10 @@ index 590182c3e9886181f13707a35303281de76f6284..31f2a1d8c2543a26330b64314ded6ed5
      bool platformANGLEMetal = false;
  
 diff --git a/src/libANGLE/Display.cpp b/src/libANGLE/Display.cpp
-index 364524a82cf573425d062eb427c780d1262e0c45..14ea46bd8c9396599b57476c32fe4a043f2371bd 100644
+index ece24d764210606a892481649230bf6fa030dd03..73a0d1a43de9f77e946b446deabe041a807458ba 100644
 --- a/src/libANGLE/Display.cpp
 +++ b/src/libANGLE/Display.cpp
-@@ -2212,9 +2212,8 @@ static ClientExtensions GenerateClientExtensions()
+@@ -2214,9 +2214,8 @@ static ClientExtensions GenerateClientExtensions()
  #endif
  
  #if defined(ANGLE_ENABLE_VULKAN)
@@ -568,7 +566,7 @@ index 364524a82cf573425d062eb427c780d1262e0c45..14ea46bd8c9396599b57476c32fe4a04
  
  #if defined(ANGLE_ENABLE_SWIFTSHADER)
 diff --git a/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp b/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
-index 02215a081ea3300be3d02032e27593c7e0778dbe..b479bb9ecbfbedbb7aea584b039de27b6cf89c28 100644
+index 29d16f16fc272f826916b6814bda155784b4ed35..f588844bc033a5134ce5dae968b23be6ae7c1771 100644
 --- a/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
 +++ b/src/libANGLE/renderer/vulkan/CLPlatformVk.cpp
 @@ -51,9 +51,9 @@ angle::Result CLPlatformVk::initBackendRenderer()
@@ -585,7 +583,7 @@ index 02215a081ea3300be3d02032e27593c7e0778dbe..b479bb9ecbfbedbb7aea584b039de27b
      return angle::Result::Continue;
  }
 diff --git a/src/libANGLE/renderer/vulkan/DisplayVk.cpp b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
-index e8fd6498d8df5a3f39ee3cd7c33bcf4fd311fb07..baf4ab070057b4d35b0426952af077c90905e810 100644
+index 49a93515ab80cde82bd4faa2067b24753e6e2acb..70d53d091f8baddb329ccdafac4cbe6847549ead 100644
 --- a/src/libANGLE/renderer/vulkan/DisplayVk.cpp
 +++ b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
 @@ -174,17 +174,10 @@ egl::Error DisplayVk::initialize(egl::Display *display)
@@ -609,10 +607,10 @@ index e8fd6498d8df5a3f39ee3cd7c33bcf4fd311fb07..baf4ab070057b4d35b0426952af077c9
  
      mDeviceQueueIndex = mRenderer->getDeviceQueueIndex(egl::ContextPriority::Medium);
 diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.cpp b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
-index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde7a2c8a2a 100644
+index 6fbf8997ad769b714d201a33eb926fa0dc46f59b..32365b23d70c757877678dd92462e6a850b53272 100644
 --- a/src/libANGLE/renderer/vulkan/vk_renderer.cpp
 +++ b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
-@@ -1941,7 +1941,6 @@ Renderer::Renderer()
+@@ -2064,7 +2064,6 @@ Renderer::Renderer()
        mEnabledICD(angle::vk::ICD::Default),
        mDebugUtilsMessenger(VK_NULL_HANDLE),
        mPhysicalDevice(VK_NULL_HANDLE),
@@ -620,7 +618,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
        mCurrentQueueFamilyIndex(std::numeric_limits<uint32_t>::max()),
        mMaxVertexAttribDivisor(1),
        mMaxVertexAttribStride(0),
-@@ -2286,9 +2285,6 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+@@ -2408,9 +2407,6 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
                                     angle::vk::ICD desiredICD,
                                     uint32_t preferredVendorId,
                                     uint32_t preferredDeviceId,
@@ -630,7 +628,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
                                     UseDebugLayers useDebugLayers,
                                     const char *wsiExtension,
                                     const char *wsiLayer,
-@@ -2512,14 +2508,13 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+@@ -2634,14 +2630,13 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
      ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount, nullptr));
      ANGLE_VK_CHECK(context, physicalDeviceCount > 0, VK_ERROR_INITIALIZATION_FAILED);
  
@@ -649,7 +647,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
  
      // The device version that is assumed by ANGLE is the minimum of the actual device version and
      // the highest it's allowed to use.
-@@ -3223,6 +3218,12 @@ void Renderer::appendDeviceExtensionFeaturesPromotedTo13(
+@@ -3360,6 +3355,12 @@ void Renderer::appendDeviceExtensionFeaturesPromotedTo13(
  void Renderer::queryDeviceExtensionFeatures(const vk::ExtensionNameList &deviceExtensionNames)
  {
      // Default initialize all extension features to false.
@@ -662,7 +660,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
      mLineRasterizationFeatures = {};
      mLineRasterizationFeatures.sType =
          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT;
-@@ -3501,6 +3502,8 @@ void Renderer::queryDeviceExtensionFeatures(const vk::ExtensionNameList &deviceE
+@@ -3645,6 +3646,8 @@ void Renderer::queryDeviceExtensionFeatures(const vk::ExtensionNameList &deviceE
      vkGetPhysicalDeviceProperties2(mPhysicalDevice, &deviceProperties);
  
      // Clean up pNext chains
@@ -671,7 +669,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
      mLineRasterizationFeatures.pNext                  = nullptr;
      mMemoryReportFeatures.pNext                       = nullptr;
      mProvokingVertexFeatures.pNext                    = nullptr;
-@@ -3952,8 +3955,16 @@ void Renderer::enableDeviceExtensionsPromotedTo11(const vk::ExtensionNameList &d
+@@ -4104,8 +4107,16 @@ void Renderer::enableDeviceExtensionsPromotedTo11(const vk::ExtensionNameList &d
  {
      // OVR_multiview disallows multiview with geometry and tessellation, so don't request these
      // features.
@@ -691,7 +689,7 @@ index f2948dc9c8ef160b268f3a446d9d95f99c550f1e..dde408b6aa2ca87930ed4b459e93bdde
      if (mFeatures.supportsMultiview.enabled)
      {
 diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.h b/src/libANGLE/renderer/vulkan/vk_renderer.h
-index 86053ac6599bddd4740389d852a882a66018b529..6c5d3af74cb6937ff64823efbad64479fe70ab69 100644
+index aae5082b40b573188ed7511077d7a5e494d67932..bcd76604be1e11c59194e857c88f4dbf030eb748 100644
 --- a/src/libANGLE/renderer/vulkan/vk_renderer.h
 +++ b/src/libANGLE/renderer/vulkan/vk_renderer.h
 @@ -145,9 +145,6 @@ class Renderer : angle::NonCopyable
@@ -704,7 +702,7 @@ index 86053ac6599bddd4740389d852a882a66018b529..6c5d3af74cb6937ff64823efbad64479
                               UseDebugLayers useDebugLayers,
                               const char *wsiExtension,
                               const char *wsiLayer,
-@@ -844,11 +841,12 @@ class Renderer : angle::NonCopyable
+@@ -851,11 +848,12 @@ class Renderer : angle::NonCopyable
      VkDebugUtilsMessengerEXT mDebugUtilsMessenger;
      VkPhysicalDevice mPhysicalDevice;
  
@@ -721,7 +719,7 @@ index 86053ac6599bddd4740389d852a882a66018b529..6c5d3af74cb6937ff64823efbad64479
      VkPhysicalDeviceProvokingVertexFeaturesEXT mProvokingVertexFeatures;
      VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT mVertexAttributeDivisorFeatures;
 diff --git a/src/libANGLE/validationEGL.cpp b/src/libANGLE/validationEGL.cpp
-index dfd86187ffc06a0f55864bb14be015998023dba0..6da834401916ade53482e606b3b225283ae33df1 100644
+index b62b55995fbb148e3949a27a050d8c21c97dd91e..fea5506e2de2ed3fc26b678ada2d00206cec351c 100644
 --- a/src/libANGLE/validationEGL.cpp
 +++ b/src/libANGLE/validationEGL.cpp
 @@ -695,7 +695,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
@@ -732,7 +730,7 @@ index dfd86187ffc06a0f55864bb14be015998023dba0..6da834401916ade53482e606b3b22528
  
          Optional<EGLAttrib> majorVersion;
          Optional<EGLAttrib> minorVersion;
-@@ -861,13 +860,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
+@@ -862,13 +861,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
                  case EGL_PLATFORM_ANGLE_D3D_LUID_LOW_ANGLE:
                      luidSpecified = true;
                      break;
@@ -746,7 +744,7 @@ index dfd86187ffc06a0f55864bb14be015998023dba0..6da834401916ade53482e606b3b22528
                  case EGL_PLATFORM_ANGLE_DEVICE_CONTEXT_VOLATILE_CGL_ANGLE:
                      // The property does not have an effect if it's not active, so do not check
                      // for non-support.
-@@ -1007,20 +999,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
+@@ -1022,20 +1014,6 @@ bool ValidateGetPlatformDisplayCommon(const ValidationContext *val,
              }
          }
  

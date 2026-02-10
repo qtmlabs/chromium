@@ -223,10 +223,10 @@ index d887e15efa82acde28823a4609eff2f5f29e8157..715ee17a8d64a6d8acadfa353efc2c5b
  }  // namespace vk
  
 diff --git a/src/libANGLE/Display.cpp b/src/libANGLE/Display.cpp
-index 14ea46bd8c9396599b57476c32fe4a043f2371bd..16ffa3a3d7c3445853d8634b00ec836d964a7161 100644
+index 73a0d1a43de9f77e946b446deabe041a807458ba..c5f32716131bab3cf1a2cc0590ede6130b33694f 100644
 --- a/src/libANGLE/Display.cpp
 +++ b/src/libANGLE/Display.cpp
-@@ -2212,8 +2212,7 @@ static ClientExtensions GenerateClientExtensions()
+@@ -2214,8 +2214,7 @@ static ClientExtensions GenerateClientExtensions()
  #endif
  
  #if defined(ANGLE_ENABLE_VULKAN)
@@ -236,7 +236,7 @@ index 14ea46bd8c9396599b57476c32fe4a043f2371bd..16ffa3a3d7c3445853d8634b00ec836d
  #endif
  
  #if defined(ANGLE_ENABLE_SWIFTSHADER)
-@@ -2241,6 +2240,10 @@ static ClientExtensions GenerateClientExtensions()
+@@ -2243,6 +2242,10 @@ static ClientExtensions GenerateClientExtensions()
      extensions.displayPowerPreferenceANGLE = true;
  #endif
  
@@ -248,7 +248,7 @@ index 14ea46bd8c9396599b57476c32fe4a043f2371bd..16ffa3a3d7c3445853d8634b00ec836d
      extensions.debug                     = true;
      extensions.featureControlANGLE       = true;
 diff --git a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
-index 5737fc9edb9b3946da345343025955f7d127564c..24141b1c330cb5ebc3ff4a8ff09bbcbd02fb9246 100644
+index 646f6ca16c943dfa80b3c8bc0a5d93216ab166a1..79f939db32631efd81680aa19391c116ed2e0ba7 100644
 --- a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
 +++ b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
 @@ -318,8 +318,8 @@ egl::Error DisplayEGL::initialize(egl::Display *display)
@@ -472,7 +472,7 @@ index 22cfaf952404fd7d0dd1956708933974328857a0..dda6522de0a74da20dbe57481cd4d009
                            void *eglHandle);
      void *getProcAddress(const char *name) const override;
 diff --git a/src/libANGLE/renderer/vulkan/DisplayVk.cpp b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
-index baf4ab070057b4d35b0426952af077c90905e810..f862dc7c43c33e19242224a296f145e20233fa12 100644
+index 70d53d091f8baddb329ccdafac4cbe6847549ead..28f8ba20a02430ddae1336746f31e8bd3c6f8712 100644
 --- a/src/libANGLE/renderer/vulkan/DisplayVk.cpp
 +++ b/src/libANGLE/renderer/vulkan/DisplayVk.cpp
 @@ -11,6 +11,7 @@
@@ -505,10 +505,10 @@ index baf4ab070057b4d35b0426952af077c90905e810..f862dc7c43c33e19242224a296f145e2
  
      mDeviceQueueIndex = mRenderer->getDeviceQueueIndex(egl::ContextPriority::Medium);
 diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.cpp b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
-index dde408b6aa2ca87930ed4b459e93bdde7a2c8a2a..a6d46b246ac0945e74c63c66b14c2f31de6da898 100644
+index 32365b23d70c757877678dd92462e6a850b53272..0e0b34bb67641849256c5082deaf2f3bfb84f71c 100644
 --- a/src/libANGLE/renderer/vulkan/vk_renderer.cpp
 +++ b/src/libANGLE/renderer/vulkan/vk_renderer.cpp
-@@ -2283,8 +2283,7 @@ angle::Result Renderer::enableInstanceExtensions(vk::ErrorContext *context,
+@@ -2405,8 +2405,7 @@ angle::Result Renderer::enableInstanceExtensions(vk::ErrorContext *context,
  angle::Result Renderer::initialize(vk::ErrorContext *context,
                                     vk::GlobalOps *globalOps,
                                     angle::vk::ICD desiredICD,
@@ -518,7 +518,7 @@ index dde408b6aa2ca87930ed4b459e93bdde7a2c8a2a..a6d46b246ac0945e74c63c66b14c2f31
                                     UseDebugLayers useDebugLayers,
                                     const char *wsiExtension,
                                     const char *wsiLayer,
-@@ -2512,9 +2511,9 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
+@@ -2634,9 +2633,9 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
      std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
      ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount,
                                                       physicalDevices.data()));
@@ -532,7 +532,7 @@ index dde408b6aa2ca87930ed4b459e93bdde7a2c8a2a..a6d46b246ac0945e74c63c66b14c2f31
      // The device version that is assumed by ANGLE is the minimum of the actual device version and
      // the highest it's allowed to use.
 diff --git a/src/libANGLE/renderer/vulkan/vk_renderer.h b/src/libANGLE/renderer/vulkan/vk_renderer.h
-index 6c5d3af74cb6937ff64823efbad64479fe70ab69..14b3fd20052ad55987e416f793df0693ccbf68f6 100644
+index bcd76604be1e11c59194e857c88f4dbf030eb748..92c8386c24161090edbb33312c99b4ce754a6f0d 100644
 --- a/src/libANGLE/renderer/vulkan/vk_renderer.h
 +++ b/src/libANGLE/renderer/vulkan/vk_renderer.h
 @@ -143,8 +143,7 @@ class Renderer : angle::NonCopyable

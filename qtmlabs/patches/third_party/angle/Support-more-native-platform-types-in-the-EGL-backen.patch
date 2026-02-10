@@ -7,10 +7,10 @@ This allows applications to use the GBM, Wayland and X11 native platform
 types with ANGLE's EGL display backend.
 
 diff --git a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
-index 24141b1c330cb5ebc3ff4a8ff09bbcbd02fb9246..26bedb40e9e97381579c76433449f1b68bfafa74 100644
+index 79f939db32631efd81680aa19391c116ed2e0ba7..88de74f0345bc677a6248ec927e56612aa42da0a 100644
 --- a/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
 +++ b/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp
-@@ -1015,6 +1015,24 @@ RendererGL *DisplayEGL::getRenderer() const
+@@ -1018,6 +1018,24 @@ RendererGL *DisplayEGL::getRenderer() const
      return mRenderer.get();
  }
  

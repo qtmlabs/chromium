@@ -13,7 +13,7 @@ This fixes an issue with Google Earth not working on Ozone/Wayland when
 using the ANGLE Vulkan backend.
 
 diff --git a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
-index 84e104c801ee0498aef0dcc871ee53d10277a61b..d4aac34f15784c3fb133416b5c7aacde3ac1048f 100644
+index c5d78865745a73b1ce868046af6e69391b6207f3..f493b0d3c056c40c3b45914c3e2f11d35bfe6b88 100644
 --- a/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
 +++ b/src/libANGLE/renderer/vulkan/linux/DmaBufImageSiblingVkLinux.cpp
 @@ -364,24 +364,32 @@ VkImageUsageFlags FindSupportedUsageFlagsForFormat(

@@ -9,7 +9,7 @@ DRM render node as the systemDeviceId, allowing Chromium to discover and
 manage multiple GPUs on Linux.
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 462157e42ab55577290b9dc4ee3de53455d84b80..a89d885c7f71a776ba99f75c28509e0af4b27e4b 100644
+index efd57a5a7b8a1a6a8ff82282700e0b23b5073cb9..3f87bd3ee860291823795f4debfb93d1206c28e7 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -31,11 +31,14 @@ if (angle_has_build) {
@@ -26,7 +26,7 @@ index 462157e42ab55577290b9dc4ee3de53455d84b80..a89d885c7f71a776ba99f75c28509e0a
  
 -  # Enable using Vulkan to collect system info as a fallback.
 +  # Enable using Vulkan to collect system info as another fallback.
-   angle_enable_vulkan_system_info = false
+   angle_enable_vulkan_system_info = is_chromeos
  
    # Link in system libGL, to work with apitrace.  See doc/DebuggingTips.md.
 @@ -728,6 +731,20 @@ angle_static_library("angle_gpu_info_util") {
@@ -51,7 +51,7 @@ index 462157e42ab55577290b9dc4ee3de53455d84b80..a89d885c7f71a776ba99f75c28509e0a
      frameworks = [
        "CoreFoundation.framework",
 diff --git a/DEPS b/DEPS
-index 5d99e7aa7cb55c232f50a61bd200e146f49052d2..2131218bd40439a0d435646150e24336154ef166 100644
+index 44513b27bf785309cc340cc2c4e41611f638b1aa..ce0fe25b1a1a226edef26bf74f76272f745d2a8a 100644
 --- a/DEPS
 +++ b/DEPS
 @@ -39,7 +39,7 @@ vars = {
@@ -63,7 +63,7 @@ index 5d99e7aa7cb55c232f50a61bd200e146f49052d2..2131218bd40439a0d435646150e24336
    'checkout_angle_mesa': False,
  
    # Version of Chromium our Chromium-based DEPS are mirrored from.
-@@ -859,7 +859,7 @@ deps = {
+@@ -862,7 +862,7 @@ deps = {
  
    'third_party/libdrm/src': {
      'url': Var('chromium_git') + '/chromiumos/third_party/libdrm.git@ad78bb591d02162d3b90890aa4d0a238b2a37cde',
@@ -181,7 +181,7 @@ index 0000000000000000000000000000000000000000..ae9e455aa9ce34525e4e11e129fdaf65
 +
 +}  // namespace angle
 diff --git a/src/gpu_info_util/SystemInfo_linux.cpp b/src/gpu_info_util/SystemInfo_linux.cpp
-index ce0c349e8435519bf48db99486cfcedab8ea0230..42797a3b70dbe062702ce809c3485a543cdbb808 100644
+index 457b6ea5b01b096783b8f5d84e75a7ce230563aa..b8bccccb592b6d585087d3b775a8e4177656c2ee 100644
 --- a/src/gpu_info_util/SystemInfo_linux.cpp
 +++ b/src/gpu_info_util/SystemInfo_linux.cpp
 @@ -69,16 +69,26 @@ bool GetPCIDevicesWithLibPCI(std::vector<GPUDeviceInfo> *devices)
@@ -197,10 +197,10 @@ index ce0c349e8435519bf48db99486cfcedab8ea0230..42797a3b70dbe062702ce809c3485a54
 +
  bool GetSystemInfo(SystemInfo *info)
  {
--    if (!GetPCIDevicesWithLibPCI(&(info->gpus)))
+-    if (!GetPCIDevicesWithLibPCI(&(info->gpus)) || info->gpus.size() == 0)
 +    if (!GetDevicesWithLibDRM(&(info->gpus)))
      {
-+        if (!GetPCIDevicesWithLibPCI(&(info->gpus)))
++        if (!GetPCIDevicesWithLibPCI(&(info->gpus)) || info->gpus.size() == 0)
 +        {
  #if defined(ANGLE_USE_VULKAN_SYSTEM_INFO)
 -        // Try vulkan backend to get GPU info
@@ -214,12 +214,12 @@ index ce0c349e8435519bf48db99486cfcedab8ea0230..42797a3b70dbe062702ce809c3485a54
 +        }
      }
  
-     if (info->gpus.size() == 0)
+     GetDualGPUInfo(info);
 diff --git a/src/libGLESv2.gni b/src/libGLESv2.gni
-index ad7f493b33145ba8b51064c58ffed9889deb17b9..e778e16d1f5ccd2bc78f96acee254a37bb2a232e 100644
+index ce5ab0ba892d73af12b07f3949c36a01c381601d..4a570ec0c39283484cb13ed1c840a46506d2d588 100644
 --- a/src/libGLESv2.gni
 +++ b/src/libGLESv2.gni
-@@ -204,6 +204,9 @@ libangle_gpu_info_util_vulkan_sources = [
+@@ -205,6 +205,9 @@ libangle_gpu_info_util_vulkan_sources = [
  libangle_gpu_info_util_libpci_sources =
      [ "src/gpu_info_util/SystemInfo_libpci.cpp" ]
  
