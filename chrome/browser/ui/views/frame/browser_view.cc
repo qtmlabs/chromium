@@ -394,6 +394,9 @@
 #undef LoadAccelerators
 #endif
 
+#if BUILDFLAG(IS_OZONE)
+#include "ui/ozone/public/ozone_platform.h"
+#endif  // BUILDFLAG(IS_OZONE)
 
 #if BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
 #include "chrome/browser/ui/views/frame/webui_tab_strip_container_view.h"
@@ -5734,6 +5737,16 @@ void BrowserView::RequestFullscreen(bool fullscreen, int64_t display_id) {
   // Request target display fullscreen from lower layers on supported platforms.
   browser_widget_->SetFullscreen(fullscreen, display_id);
 #else   // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_OZONE)
+  if (ui::OzonePlatform::GetInstance()
+          ->GetPlatformProperties()
+          .supports_target_display_fullscreen) {
+    // Request target display fullscreen from Ozone if supported by current
+    // platform.
+    browser_widget_->SetFullscreen(fullscreen, display_id);
+    return;
+  }
+#endif  // BUILDFLAG(IS_OZONE)
   // TODO(crbug.com/40111909): Reimplement this at lower layers on all
   // platforms.
   if (fullscreen && display_id != display::kInvalidDisplayId) {
