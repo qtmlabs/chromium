@@ -164,6 +164,10 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // Indicates that the platform supports GPU process sandboxing.
     bool supports_gpu_sandboxing = false;
 #endif
+
+    // Whether the platform supports making a window fullscreen on a specific
+    // display.
+    bool supports_target_display_fullscreen = false;
   };
 
   // Groups platform properties that can only be known at run time.

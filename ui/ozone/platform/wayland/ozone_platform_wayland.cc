@@ -368,6 +368,8 @@ class OzonePlatformWayland : public OzonePlatform,
       // server to function, so enable GPU sandboxing.
       properties->supports_gpu_sandboxing = true;
 
+      properties->supports_target_display_fullscreen = true;
+
       initialised = true;
     }
 
