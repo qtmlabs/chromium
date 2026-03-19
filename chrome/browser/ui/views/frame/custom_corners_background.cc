@@ -134,7 +134,15 @@ void CustomCornersBackground::Paint(gfx::Canvas* canvas,
     CHECK(!view->layer()->fills_bounds_opaquely());
   }
 
-  gfx::Rect rect(view->GetLocalBounds());
+  // Make sure the the background will cover the entire clip path region.
+  // TODO(crbug.com/41344902): Remove the clip code and just use local bounds
+  // once the pixel canvas is enabled on all aura platforms.
+  SkPath clip_path = view->clip_path();
+  SkRect bounds = clip_path.getBounds();
+  gfx::Rect rect =
+      !clip_path.isEmpty()
+          ? gfx::Rect(bounds.x(), bounds.y(), bounds.width(), bounds.height())
+          : view->GetLocalBounds();
 
   const Corners corners = GetMirroredCorners();
   const Outline outline = GetMirroredOutline();
