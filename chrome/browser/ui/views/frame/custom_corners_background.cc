@@ -324,7 +324,15 @@ void CustomCornersBackground::Paint(gfx::Canvas* canvas,
     canvas->ClipPath(cutout_path, true, SkClipOp::kDifference);
   }
 
-  gfx::Rect rect(view->GetLocalBounds());
+  // Make sure the the background will cover the entire clip path region.
+  // TODO(crbug.com/41344902): Remove the clip code and just use local bounds
+  // once the pixel canvas is enabled on all aura platforms.
+  SkPath clip_path = view->clip_path();
+  SkRect clip_bounds = clip_path.getBounds();
+  gfx::Rect rect = !clip_path.isEmpty()
+                       ? gfx::Rect(clip_bounds.x(), clip_bounds.y(),
+                                   clip_bounds.width(), clip_bounds.height())
+                       : view->GetLocalBounds();
 
   const VisualCorners corners = GetMirroredCorners();
   const Outline outline = GetMirroredOutline();
@@ -389,8 +397,8 @@ void CustomCornersBackground::Paint(gfx::Canvas* canvas,
 
   // Draw solid rect/rrect background:
   CornerRadii radii;
-  PaintPath(canvas, GetBackgroundPath(view_->GetLocalBounds(), &radii),
-            primary_color_, /*anti_alias=*/true);
+  PaintPath(canvas, GetBackgroundPath(rect, &radii), primary_color_,
+            /*anti_alias=*/true);
 
   // Paint strokes around the outside. Corners get strokes if they are between
   // two sides with strokes and have a radius. Multiple paths may be drawn if
