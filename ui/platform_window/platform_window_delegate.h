@@ -215,6 +215,8 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void OnDisplayColorSpacesChanged(
       scoped_refptr<gfx::DisplayColorSpacesRef> color_spaces);
 
+  virtual void OnNearestDisplayChanged();
+
   // Returns optional information for owned windows that require anchor for
   // positioning. Useful for such backends as Wayland as it provides flexibility
   // in positioning child windows, which must be repositioned if the originally
