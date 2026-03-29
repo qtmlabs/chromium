@@ -9,6 +9,7 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/notimplemented.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/modules/skcms/skcms.h"
 #include "ui/gfx/display_color_spaces.h"
 #include "ui/ozone/platform/wayland/host/wayland_connection.h"
 #include "ui/ozone/platform/wayland/host/wayland_wp_color_manager.h"
@@ -89,6 +90,52 @@ gfx::ColorSpace::TransferID ToGfxTransferID(
   }
 }
 
+bool IsColorSpaceTooWide(const skcms_ICCProfile* color_profile) {
+  if (!color_profile) {
+    return false;
+  }
+
+  skcms_ICCProfile sc_rgb = *skcms_sRGB_profile();
+  skcms_SetTransferFunction(&sc_rgb, skcms_Identity_TransferFunction());
+
+  std::array<std::array<uint8_t, 3>, 3> in;
+  std::ranges::fill(in[0], 0);
+  std::ranges::fill(in[1], 0);
+  std::ranges::fill(in[2], 0);
+  in[0][0] = 255;
+  in[1][1] = 255;
+  in[2][2] = 255;
+
+  std::array<std::array<float, 3>, 3> out;
+  bool color_conversion_successful = skcms_Transform(
+      in.data(), skcms_PixelFormat_RGB_888, skcms_AlphaFormat_Unpremul,
+      color_profile, out.data(), skcms_PixelFormat_RGB_fff,
+      skcms_AlphaFormat_Unpremul, &sc_rgb, 3);
+  DCHECK(color_conversion_successful);
+  const float score = out[0][0] * out[1][1] * out[2][2];
+
+  return score >= 1.425;
+}
+
+bool IsColorSpaceTooWide(const gfx::ColorSpace& color_space) {
+  if (!color_space.IsValid()) {
+    return false;
+  }
+
+  if (color_space.IsHDR()) {
+    return true;
+  }
+
+  sk_sp<SkColorSpace> sk_color_space = color_space.ToSkColorSpace();
+  if (!sk_color_space) {
+    return false;
+  }
+
+  skcms_ICCProfile color_profile;
+  sk_color_space->toProfile(&color_profile);
+  return IsColorSpaceTooWide(&color_profile);
+}
+
 }  // namespace
 
 WaylandWpImageDescription::WaylandWpImageDescription(
@@ -135,7 +182,7 @@ WaylandWpImageDescription::AsDisplayColorSpaces() const {
     }
   }
 
-  if (color_space_.IsHDR()) {
+  if (IsColorSpaceTooWide(color_space_)) {
     gfx::ColorSpace::TransferID sdr_transfer =
         gfx::ColorSpace::TransferID::INVALID;
     if (connection_->wp_color_manager()->IsSupportedTransferFunction(
