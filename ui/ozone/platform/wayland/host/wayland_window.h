@@ -559,6 +559,8 @@ class WaylandWindow : public PlatformWindow,
   void OnCursorLoaded(scoped_refptr<WaylandAsyncCursor> cursor,
                       scoped_refptr<BitmapCursor> bitmap_cursor);
 
+  void OnPreferredEnteredOutputChanged();
+
   // StateRequest describes a State that we are applying to the window, and the
   // metadata about that State, such as what serial number to use for ack (if it
   // came from a configure), or the viz sequence number.

@@ -1016,6 +1016,7 @@ void WaylandWindow::OnEnteredOutput() {
     return;
   }
   OnEnteredOutputScaleChanged();
+  OnPreferredEnteredOutputChanged();
 }
 
 void WaylandWindow::OnLeftOutput() {
@@ -1026,6 +1027,7 @@ void WaylandWindow::OnLeftOutput() {
     return;
   }
   OnEnteredOutputScaleChanged();
+  OnPreferredEnteredOutputChanged();
 }
 
 WaylandWindow* WaylandWindow::GetTopMostChildWindow() {
@@ -1279,6 +1281,24 @@ void WaylandWindow::OnCursorLoaded(scoped_refptr<WaylandAsyncCursor> cursor,
                                    scoped_refptr<BitmapCursor> bitmap_cursor) {
   if (HasPointerFocus() && async_cursor_ == cursor && bitmap_cursor) {
     UpdateCursorShape(bitmap_cursor);
+  }
+}
+
+void WaylandWindow::OnPreferredEnteredOutputChanged() {
+  if (shutting_down_) {
+    return;
+  }
+
+  delegate_->OnNearestDisplayChanged();
+
+  // Propagate update to the popups.
+  if (child_popup_) {
+    child_popup_->OnPreferredEnteredOutputChanged();
+  }
+
+  // Propagate update to the bubble windows.
+  for (auto bubble : child_bubbles_) {
+    bubble->OnPreferredEnteredOutputChanged();
   }
 }
 
