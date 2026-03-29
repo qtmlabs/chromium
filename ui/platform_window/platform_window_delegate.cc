@@ -129,4 +129,8 @@ void PlatformWindowDelegate::OnDisplayColorSpacesChanged(
   NOTIMPLEMENTED_LOG_ONCE();
 }
 
+void PlatformWindowDelegate::OnNearestDisplayChanged() {
+  NOTIMPLEMENTED_LOG_ONCE();
+}
+
 }  // namespace ui
