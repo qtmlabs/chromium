@@ -103,6 +103,7 @@ class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
                         const PlatformWindowDelegate::State& latest) override;
   void OnDisplayColorSpacesChanged(
       scoped_refptr<gfx::DisplayColorSpacesRef> color_spaces) override;
+  void OnNearestDisplayChanged() override;
 
   // Overridden from aura::WindowTreeHost:
   gfx::Point GetLocationOnScreenInPixels() const override;

@@ -425,4 +425,8 @@ void WindowTreeHostPlatform::OnDisplayColorSpacesChanged(
   WindowTreeHost::OnDisplayColorSpacesChanged(std::move(color_spaces));
 }
 
+void WindowTreeHostPlatform::OnNearestDisplayChanged() {
+  OnHostDisplayChanged();
+}
+
 }  // namespace aura
