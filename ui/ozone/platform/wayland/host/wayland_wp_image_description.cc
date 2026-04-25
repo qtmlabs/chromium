@@ -194,7 +194,6 @@ WaylandWpImageDescription::~WaylandWpImageDescription() = default;
 scoped_refptr<gfx::DisplayColorSpacesRef>
 WaylandWpImageDescription::AsDisplayColorSpaces() const {
   auto display_color_spaces = gfx::DisplayColorSpaces(color_space_);
-  display_color_spaces.SetSDRMaxLuminanceNits(sdr_max_luminance_nits_);
   display_color_spaces.SetHDRMaxLuminanceRelative(hdr_max_luminance_relative_);
 
   if (IsColorSpaceTooWide(color_space_)) {
