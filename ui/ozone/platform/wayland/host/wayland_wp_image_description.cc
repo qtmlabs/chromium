@@ -89,38 +89,6 @@ gfx::ColorSpace::TransferID ToGfxTransferID(
   }
 }
 
-bool TransferIsPowerCurve(gfx::ColorSpace::TransferID transfer) {
-  switch (transfer) {
-    case gfx::ColorSpace::TransferID::LINEAR:
-    case gfx::ColorSpace::TransferID::LINEAR_HDR:
-    case gfx::ColorSpace::TransferID::SCRGB_LINEAR_80_NITS:
-    case gfx::ColorSpace::TransferID::BT709_APPLE:
-    case gfx::ColorSpace::TransferID::GAMMA18:
-    case gfx::ColorSpace::TransferID::GAMMA22:
-    case gfx::ColorSpace::TransferID::GAMMA24:
-    case gfx::ColorSpace::TransferID::GAMMA28:
-    case gfx::ColorSpace::TransferID::SMPTEST428_1:
-      return true;
-    case gfx::ColorSpace::TransferID::INVALID:
-    case gfx::ColorSpace::TransferID::BT709:
-    case gfx::ColorSpace::TransferID::SMPTE170M:
-    case gfx::ColorSpace::TransferID::SMPTE240M:
-    case gfx::ColorSpace::TransferID::LOG:
-    case gfx::ColorSpace::TransferID::LOG_SQRT:
-    case gfx::ColorSpace::TransferID::IEC61966_2_4:
-    case gfx::ColorSpace::TransferID::BT1361_ECG:
-    case gfx::ColorSpace::TransferID::SRGB:
-    case gfx::ColorSpace::TransferID::BT2020_10:
-    case gfx::ColorSpace::TransferID::BT2020_12:
-    case gfx::ColorSpace::TransferID::PQ:
-    case gfx::ColorSpace::TransferID::HLG:
-    case gfx::ColorSpace::TransferID::SRGB_HDR:
-    case gfx::ColorSpace::TransferID::CUSTOM:
-    case gfx::ColorSpace::TransferID::CUSTOM_HDR:
-      return false;
-  }
-}
-
 bool IsColorSpaceTooWide(const skcms_ICCProfile* color_profile) {
   if (!color_profile) {
     return false;
@@ -283,8 +251,7 @@ gfx::ColorSpace WaylandWpImageDescription::CreateColorSpaceFromPendingInfo(
   if (pending_transfer_id_) {
     transfer = *pending_transfer_id_;
   } else if (pending_custom_transfer_fn_) {
-    transfer = is_hdr ? gfx::ColorSpace::TransferID::CUSTOM_HDR
-                      : gfx::ColorSpace::TransferID::CUSTOM;
+    transfer = gfx::ColorSpace::TransferID::CUSTOM;
     custom_transfer_fn = &*pending_custom_transfer_fn_;
   }
 
@@ -297,47 +264,7 @@ gfx::ColorSpace WaylandWpImageDescription::CreateColorSpaceFromPendingInfo(
       *primaries, *transfer, gfx::ColorSpace::MatrixID::RGB,
       gfx::ColorSpace::RangeID::FULL, custom_primaries, custom_transfer_fn);
 
-  // gfx::ColorSpace decides HDR based on the transfer function. If there's
-  // any HDR headroom but the transfer function is something like gamma 2.2,
-  // force a different transfer function. This workaround may be removed once
-  // gfx::ColorSpace::IsHDR() is removed.
-  if (!is_hdr || color_space_.IsHDR()) {
-    return color_space;
-  }
-
-  auto* color_manager = connection_->wp_color_manager();
-  if (color_manager->IsSupportedFeature(
-          WP_COLOR_MANAGER_V1_FEATURE_SET_TF_POWER) &&
-      TransferIsPowerCurve(*transfer)) {
-    // Convert to a CUSTOM_HDR transfer function if it's supported by the
-    // compositor.
-    return color_space.GetAsHDR();
-  }
-
-  constexpr struct {
-    wp_color_manager_v1_transfer_function wl_transfer;
-    gfx::ColorSpace::TransferID gfx_transfer;
-  } kFallbackHdrTransfers[] = {
-      {WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ,
-       gfx::ColorSpace::TransferID::PQ},
-      {WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG,
-       gfx::ColorSpace::TransferID::HLG},
-      {WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_SRGB,
-       gfx::ColorSpace::TransferID::SRGB_HDR},
-      {WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
-       gfx::ColorSpace::TransferID::LINEAR_HDR},
-  };
-
-  for (const auto& fallback : kFallbackHdrTransfers) {
-    if (color_manager->IsSupportedTransferFunction(fallback.wl_transfer)) {
-      return gfx::ColorSpace(
-          *primaries, fallback.gfx_transfer, gfx::ColorSpace::MatrixID::RGB,
-          gfx::ColorSpace::RangeID::FULL, custom_primaries, custom_transfer_fn);
-    }
-  }
-
-  LOG(ERROR) << "No valid fallback HDR transfer function.";
-  return gfx::ColorSpace::CreateSRGB();
+  return color_space;
 }
 
 // static
