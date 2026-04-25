@@ -272,11 +272,6 @@ bool WaylandWpColorManager::PopulateDescriptionCreator(
 
     const float ref_luma = gfx::HDRMetadata::GetWaylandReferenceLuminance(
         color_space, hdr_metadata);
-    if (IsSupportedFeature(WP_COLOR_MANAGER_V1_FEATURE_SET_LUMINANCES)) {
-      wp_image_description_creator_params_v1_set_luminances(
-          creator, 0, gfx::HDRMetadata::GetContentMaxLuminance(hdr_metadata),
-          ref_luma);
-    }
 
     uint32_t cll = ref_luma;
     uint32_t fall = ref_luma;
