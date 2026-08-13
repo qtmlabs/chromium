@@ -306,11 +306,6 @@ WaylandOutput* WaylandScreen::GetWaylandOutputForDisplayId(int64_t display_id) {
   return output_manager->GetOutput(GetOutputIdForDisplayId(display_id));
 }
 
-viz::SharedImageFormat WaylandScreen::GetHDRImageFormat() const {
-  CHECK(image_format_hdr_);
-  return image_format_hdr_.value();
-}
-
 WaylandOutput::Id WaylandScreen::GetOutputIdMatching(const gfx::Rect& bounds) {
   int64_t display_id = GetDisplayMatching(bounds).id();
   return GetOutputIdForDisplayId(display_id);
